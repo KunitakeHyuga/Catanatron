@@ -5,88 +5,87 @@
 ![Discord](https://img.shields.io/discord/1385302652014825552)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bcollazo/catanatron/blob/master/examples/Overview.ipynb)
 
-Catanatron is a high-performance simulator and strong AI player for Settlers of Catan. You can run thousands of games in the order of seconds. The goal is to find the strongest Settlers of Catan bot possible. 
+Catanatron は Settlers of Catan（カタンの開拓者たち）の高速シミュレーター兼強力な AI プレイヤーです。数千ゲーム規模のシミュレーションを数秒単位で回し、最強のカタンボットを探し出すことを目標としています。
 
-Get Started with the Full Documentation: https://docs.catanatron.com
+詳細ドキュメント: https://docs.catanatron.com
 
-Join our Discord: https://discord.gg/FgFmb75TWd!
+コミュニティ Discord: https://discord.gg/FgFmb75TWd
 
-## Command Line Interface
-Catanatron provides a `catanatron-play` CLI tool to run large scale simulations.
+## コマンドラインインターフェース
+大規模なシミュレーションを回すための `catanatron-play` CLI ツールを同梱しています。
 
 <p align="left">
  <img src="https://raw.githubusercontent.com/bcollazo/catanatron/master/docs/source/_static/cli.gif">
 </p>
 
-### Installation
+### インストール
 
-1. Clone the repository:
+1. リポジトリを取得します:
 
     ```bash
     git clone git@github.com:bcollazo/catanatron.git
     cd catanatron/
     ```
-2. Create a virtual environment (requires Python 3.11 or higher) 
+2. Python 3.11 以上で仮想環境を作成:
 
     ```bash
     python -m venv venv
     source ./venv/bin/activate
     ```
-3. Install dependencies
+3. 依存関係をインストール:
 
     ```bash
     pip install -e .
     ```
-4. (Optional) Install developer and advanced dependencies 
+4. （任意）Web UI や Gym、開発向けの依存関係:
 
     ```bash
     pip install -e ".[web,gym,dev]"
     ```
 
-### Usage
+### 使い方
 
-Run simulations and generate datasets via the CLI:
+CLI からシミュレーションやデータセット生成を実行できます:
 
 ```bash
 catanatron-play --players=R,R,R,W --num=100
 ```
 
-Generate datasets from the games to analyze:
+ゲーム結果をファイルに出力して解析する例:
 ```bash
 catanatron-play --num 100 --output my-data-path/ --output-format json
 ```
 
-See more examples at https://docs.catanatron.com.
+追加の使い方は https://docs.catanatron.com を参照してください。
 
 
-## Graphical User Interface
+## グラフィカルユーザーインターフェース
 
-We provide Docker images so that you can watch, inspect, and play games against Catanatron via a web UI!
+Docker で Web UI を起動し、Catanatron 対戦や観戦ができます。
 
 <p align="left">
  <img src="https://raw.githubusercontent.com/bcollazo/catanatron/master/docs/source/_static/CatanatronUI.png">
 </p>
 
 
-### Installation
+### 起動手順
 
-1. Ensure you have Docker installed (https://docs.docker.com/engine/install/)
-2. Run the `docker-compose.yaml` in the root folder of the repo:
+1. Docker をインストール（https://docs.docker.com/engine/install/）
+2. リポジトリ直下で `docker-compose.yaml` を実行:
 
     ```bash
     docker compose up
     ```
-3. Visit http://localhost:3000 in your browser!
+3. ブラウザで http://localhost:3000 を開きます。
 
-## Python Library
+## Python ライブラリ
 
-You can also use `catanatron` package directly which provides a core
-implementation of the Settlers of Catan game logic.
+`catanatron` パッケージを直接利用して、カタンのコアロジックを Python から呼び出すこともできます。
 
 ```python
 from catanatron import Game, RandomPlayer, Color
 
-# Play a simple 4v4 game
+# シンプルな 4 人対戦を実行
 players = [
     RandomPlayer(Color.RED),
     RandomPlayer(Color.BLUE),
@@ -94,20 +93,20 @@ players = [
     RandomPlayer(Color.ORANGE),
 ]
 game = Game(players)
-print(game.play())  # returns winning color
+print(game.play())  # 勝利した色を返す
 ```
 
-See more at http://docs.catanatron.com
+詳細は http://docs.catanatron.com を参照してください。
 
-## Gymnasium Interface
-For Reinforcement Learning, catanatron provides an Open AI / Gymnasium Environment.
+## Gymnasium インターフェース
+強化学習向けに OpenAI Gym/Gymnasium 互換の環境も提供しています。
 
-Install it with:
+インストール:
 ```bash
 pip install -e .[gym]
 ```
 
-and use it like:
+使用例:
 ```python
 import random
 import gymnasium
@@ -126,24 +125,23 @@ for _ in range(1000):
 env.close()
 ```
 
-See more at: https://docs.catanatron.com
+詳しくは https://docs.catanatron.com へ。
 
 
-## Documentation
-Full documentation here: https://docs.catanatron.com
+## ドキュメント
+完全版ドキュメント: https://docs.catanatron.com
 
-## Contributing
+## コントリビュート
 
-To develop for Catanatron core logic, install the dev dependencies and use the following test suite:
+Catanatron コアへ貢献する場合は開発用依存パッケージを入れ、次のテストを実行してください:
 
 ```bash
 pip install .[web,gym,dev]
 coverage run --source=catanatron -m pytest tests/ && coverage report
 ```
 
-See more at: https://docs.catanatron.com
+貢献の詳細は https://docs.catanatron.com にまとめています。
 
-## Appendix
-See the motivation of the project here: [5 Ways NOT to Build a Catan AI](https://medium.com/@bcollazo2010/5-ways-not-to-build-a-catan-ai-e01bc491af17).
-
+## 付録
+プロジェクトの背景はこちら: [5 Ways NOT to Build a Catan AI](https://medium.com/@bcollazo2010/5-ways-not-to-build-a-catan-ai-e01bc491af17)（英語）。
 
