@@ -16,7 +16,7 @@ function extractLatestRoll(gameState: GameState | null): RollInfo {
     const record = gameState.action_records[i];
     if (record[0][1] === "ROLL") {
       const roll = record[1] as RollValue;
-      const key = `${roll[0]}-${roll[1]}-${i}-${gameState.state_index}`;
+      const key = `${roll[0]}-${roll[1]}-${i}`;
       return { roll, key };
     }
   }

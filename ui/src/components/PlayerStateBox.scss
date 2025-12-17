@@ -1,4 +1,5 @@
 @use "../variables.scss";
+@use "sass:color";
 
 .resource-legend {
   display: flex;
@@ -59,11 +60,18 @@
 }
 
 .resource-cards {
-  height: 40px;
+  min-height: 60px;
   display: flex;
-  gap: 6px;
-
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: variables.$sm-gutter;
+  align-items: flex-start;
+
+  .separator {
+    width: 100%;
+    height: 0;
+    flex-basis: 100%;
+  }
 
   .card {
     border-radius: 4px;
@@ -72,12 +80,11 @@
     &.has-card {
       opacity: 1;
     }
-    div {
-      background: #151313;
-      color: white;
 
-      width: 21px;
-      height: 36px;
+    .card-surface {
+      width: 42px;
+      height: 56px;
+      padding: 4px 2px;
 
       display: flex;
       flex-direction: column;
@@ -86,31 +93,66 @@
       font-size: 0.8rem;
       font-weight: bold;
       position: relative;
-    }
-  }
-  .wood-cards {
-    background: variables.$wood;
-  }
-  .brick-cards {
-    background: variables.$brick;
-  }
-  .wheat-cards {
-    background: variables.$wheat;
-  }
-  .sheep-cards {
-    background: variables.$darker-sheep;
-  }
-  .ore-cards {
-    background: variables.$ore;
-  }
-  .dev-cards {
-    background: purple;
-    div {
-      font-size: 0.7rem;
+      border-radius: 4px;
+
       .card-label {
         font-size: 0.55rem;
         margin-bottom: 2px;
       }
+
+      .card-count {
+        font-size: 1rem;
+        line-height: 1;
+      }
+    }
+  }
+
+  .resource-card-surface {
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  }
+
+  .wood-cards {
+    background: variables.$wood;
+    .resource-card-surface {
+      background: color.adjust(variables.$wood, $lightness: -2%);
+      color: #0b1f10;
+    }
+  }
+  .brick-cards {
+    background: variables.$brick;
+    .resource-card-surface {
+      background: color.adjust(variables.$brick, $lightness: -4%);
+      color: #fff6f0;
+    }
+  }
+  .wheat-cards {
+    background: variables.$wheat;
+    .resource-card-surface {
+      background: color.adjust(variables.$wheat, $lightness: 5%);
+      color: #3a2806;
+    }
+  }
+  .sheep-cards {
+    background: variables.$darker-sheep;
+    .resource-card-surface {
+      background: color.adjust(variables.$darker-sheep, $lightness: 0%);
+      color: #102711;
+    }
+  }
+  .ore-cards {
+    background: variables.$ore;
+    .resource-card-surface {
+      background: color.adjust(variables.$ore, $lightness: -3%);
+      color: #f5f7ff;
+    }
+  }
+  .dev-cards {
+    background: purple;
+    .dev-card-surface {
+      background: #151313;
+      color: white;
+      font-size: 0.7rem;
       .card-count {
         font-size: 0.9rem;
       }
@@ -123,29 +165,33 @@
   justify-content: center;
   align-items: center;
 
-  width: 25px;
-  height: 40px;
+  width: 42px;
+  height: 56px;
 }
 
 .player-state-box {
   padding: variables.$sm-gutter;
-
-  max-width: variables.$sm-breakpoint;
-  margin: 0 auto;
   width: 100%;
 
   .scores {
     display: flex;
+    gap: 6px;
     justify-content: space-between;
+    small {
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .center-text {
+      width: 58px;
+      height: 50px;
+    }
   }
 
-  .num-knights,
-  .num-roads,
-  .victory-points {
-    flex-direction: column;
-    width: 50px;
-    height: 40px;
-  }
+.num-knights,
+.num-roads,
+.victory-points {
+  flex-direction: column;
+}
 
   .bold {
     font-weight: bold;

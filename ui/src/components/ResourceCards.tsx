@@ -1,38 +1,59 @@
 import { Paper } from "@mui/material";
 import { type PlayerState } from "../utils/api.types";
-import { type Card } from "../utils/api.types";
-import { cardLabel } from "../utils/i18n";
+import { type Card, type ResourceCard } from "../utils/api.types";
+import { cardLabel, resourceLabel } from "../utils/i18n";
 
 // TODO - do we need to split the SCSS for this component?
 import "./PlayerStateBox.scss";
 
-export default function ResourceCards({ playerState, playerKey }: { playerState: PlayerState; playerKey: string }) {
+const RESOURCE_CARDS: ResourceCard[] = [
+  "WOOD",
+  "BRICK",
+  "SHEEP",
+  "WHEAT",
+  "ORE",
+];
+const DEV_CARDS: Card[] = [
+  "VICTORY_POINT",
+  "KNIGHT",
+  "MONOPOLY",
+  "YEAR_OF_PLENTY",
+  "ROAD_BUILDING",
+];
+
+export default function ResourceCards({
+  playerState,
+  playerKey,
+}: {
+  playerState: PlayerState;
+  playerKey: string;
+}) {
   const amount = (card: Card) => playerState[`${playerKey}_${card}_IN_HAND`];
   return (
     <div className="resource-cards" title="資源カード">
-      <div className={`wood-cards center-text card ${amount("WOOD") ? "has-card" : ""}`}>
-        <Paper>{amount("WOOD")}</Paper>
-      </div>
-      <div className={`brick-cards center-text card ${amount("BRICK") ? "has-card" : ""}`}>
-        <Paper>{amount("BRICK")}</Paper>
-      </div>
-      <div className={`sheep-cards center-text card ${amount("SHEEP") ? "has-card" : ""}`}>
-        <Paper>{amount("SHEEP")}</Paper>
-      </div>
-      <div className={`wheat-cards center-text card ${amount("WHEAT") ? "has-card" : ""}`}>
-        <Paper>{amount("WHEAT")}</Paper>
-      </div>
-      <div className={`ore-cards center-text card ${amount("ORE") ? "has-card" : ""}`}>
-        <Paper>{amount("ORE")}</Paper>
-      </div>
+      {RESOURCE_CARDS.map((card) => (
+        <div
+          key={card}
+          className={`${card.toLowerCase()}-cards resource-card center-text card ${
+            amount(card) ? "has-card" : ""
+          }`}
+        >
+          <Paper
+            className={`card-surface resource-card-surface ${card.toLowerCase()}-surface`}
+          >
+            <span className="card-label">{resourceLabel(card)}</span>
+            <span className="card-count">{amount(card)}</span>
+          </Paper>
+        </div>
+      ))}
       <div className="separator"></div>
-      {(["VICTORY_POINT","KNIGHT","MONOPOLY","YEAR_OF_PLENTY","ROAD_BUILDING"] as Card[]).map((card) => (
+      {DEV_CARDS.map((card) => (
         <div
           key={card}
           className={`dev-cards center-text card ${amount(card) ? "has-card" : ""}`}
           title={`${amount(card)}枚の${cardLabel(card)}`}
         >
-          <Paper>
+          <Paper className="card-surface dev-card-surface">
             <span className="card-label">
               {card === "VICTORY_POINT"
                 ? "勝利点"

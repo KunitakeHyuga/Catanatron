@@ -22,6 +22,7 @@ import useRollDisplay from "../hooks/useRollDisplay";
 import RollingDiceOverlay from "../components/RollingDiceOverlay";
 import { colorLabel } from "../utils/i18n";
 import TurnIndicator from "../components/TurnIndicator";
+import BuildCostGuide from "../components/BuildCostGuide";
 
 const ROBOT_THINKING_TIME = 300;
 
@@ -123,6 +124,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
         <Divider />
         <DiceDisplay roll={displayRoll} />
         <Divider />
+        <BuildCostGuide />
       </RightDrawer>
     </main>
   );
