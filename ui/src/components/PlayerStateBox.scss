@@ -1,5 +1,63 @@
 @use "../variables.scss";
 
+.resource-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.65rem;
+  color: #f1f1f1;
+
+  .legend-title {
+    font-weight: 700;
+    margin-right: 2px;
+  }
+
+  .legend-chip {
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #000;
+    font-weight: 600;
+  }
+
+  .wood {
+    background: variables.$wood;
+  }
+  .brick {
+    background: variables.$brick;
+  }
+  .sheep {
+    background: variables.$darker-sheep;
+  }
+  .wheat {
+    background: variables.$wheat;
+  }
+  .ore {
+    background: variables.$ore;
+  }
+
+  .dev {
+    color: #fff;
+    background: #5e2b97;
+  }
+  .victory {
+    background: #795548;
+  }
+  .knight {
+    background: #3f51b5;
+  }
+  .monopoly {
+    background: #d32f2f;
+  }
+  .plenty {
+    background: #388e3c;
+  }
+  .road {
+    background: #ff9800;
+  }
+}
+
 .resource-cards {
   height: 40px;
   display: flex;
@@ -9,6 +67,11 @@
 
   .card {
     border-radius: 4px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+    &.has-card {
+      opacity: 1;
+    }
     div {
       background: #151313;
       color: white;
@@ -44,6 +107,13 @@
     background: purple;
     div {
       font-size: 0.7rem;
+      .card-label {
+        font-size: 0.55rem;
+        margin-bottom: 2px;
+      }
+      .card-count {
+        font-size: 0.9rem;
+      }
     }
   }
 }

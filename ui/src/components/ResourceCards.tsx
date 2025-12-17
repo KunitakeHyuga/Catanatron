@@ -10,87 +10,44 @@ export default function ResourceCards({ playerState, playerKey }: { playerState:
   const amount = (card: Card) => playerState[`${playerKey}_${card}_IN_HAND`];
   return (
     <div className="resource-cards" title="資源カード">
-      {amount("WOOD") !== 0 && (
-        <div className="wood-cards center-text card">
-          <Paper>{amount("WOOD")}</Paper>
-        </div>
-      )}
-      {amount("BRICK") !== 0 && (
-        <div className="brick-cards center-text card">
-          <Paper>{amount("BRICK")}</Paper>
-        </div>
-      )}
-      {amount("SHEEP") !== 0 && (
-        <div className="sheep-cards center-text card">
-          <Paper>{amount("SHEEP")}</Paper>
-        </div>
-      )}
-      {amount("WHEAT") !== 0 && (
-        <div className="wheat-cards center-text card">
-          <Paper>{amount("WHEAT")}</Paper>
-        </div>
-      )}
-      {amount("ORE") !== 0 && (
-        <div className="ore-cards center-text card">
-          <Paper>{amount("ORE")}</Paper>
-        </div>
-      )}
+      <div className={`wood-cards center-text card ${amount("WOOD") ? "has-card" : ""}`}>
+        <Paper>{amount("WOOD")}</Paper>
+      </div>
+      <div className={`brick-cards center-text card ${amount("BRICK") ? "has-card" : ""}`}>
+        <Paper>{amount("BRICK")}</Paper>
+      </div>
+      <div className={`sheep-cards center-text card ${amount("SHEEP") ? "has-card" : ""}`}>
+        <Paper>{amount("SHEEP")}</Paper>
+      </div>
+      <div className={`wheat-cards center-text card ${amount("WHEAT") ? "has-card" : ""}`}>
+        <Paper>{amount("WHEAT")}</Paper>
+      </div>
+      <div className={`ore-cards center-text card ${amount("ORE") ? "has-card" : ""}`}>
+        <Paper>{amount("ORE")}</Paper>
+      </div>
       <div className="separator"></div>
-      {amount("VICTORY_POINT") !== 0 && (
+      {(["VICTORY_POINT","KNIGHT","MONOPOLY","YEAR_OF_PLENTY","ROAD_BUILDING"] as Card[]).map((card) => (
         <div
-          className="dev-cards center-text card"
-          title={`${amount("VICTORY_POINT")}枚の${cardLabel("VICTORY_POINT")}`}
+          key={card}
+          className={`dev-cards center-text card ${amount(card) ? "has-card" : ""}`}
+          title={`${amount(card)}枚の${cardLabel(card)}`}
         >
           <Paper>
-            <span>{amount("VICTORY_POINT")}</span>
-            <span>勝利</span>
+            <span className="card-label">
+              {card === "VICTORY_POINT"
+                ? "勝利点"
+                : card === "KNIGHT"
+                ? "騎士"
+                : card === "MONOPOLY"
+                ? "独占"
+                : card === "YEAR_OF_PLENTY"
+                ? "豊穣"
+                : "街道"}
+            </span>
+            <span className="card-count">{amount(card)}</span>
           </Paper>
         </div>
-      )}
-      {amount("KNIGHT") !== 0 && (
-        <div
-          className="dev-cards center-text card"
-          title={`${amount("KNIGHT")}枚の${cardLabel("KNIGHT")}`}
-        >
-          <Paper>
-            <span>{amount("KNIGHT")}</span>
-            <span>騎士</span>
-          </Paper>
-        </div>
-      )}
-      {amount("MONOPOLY") !== 0 && (
-        <div
-          className="dev-cards center-text card"
-          title={`${amount("MONOPOLY")}枚の${cardLabel("MONOPOLY")}`}
-        >
-          <Paper>
-            <span>{amount("MONOPOLY")}</span>
-            <span>独占</span>
-          </Paper>
-        </div>
-      )}
-      {amount("YEAR_OF_PLENTY") !== 0 && (
-        <div
-          className="dev-cards center-text card"
-          title={`${amount("YEAR_OF_PLENTY")}枚の${cardLabel("YEAR_OF_PLENTY")}`}
-        >
-          <Paper>
-            <span>{amount("YEAR_OF_PLENTY")}</span>
-            <span>豊穣</span>
-          </Paper>
-        </div>
-      )}
-      {amount("ROAD_BUILDING") !== 0 && (
-        <div
-          className="dev-cards center-text card"
-          title={`${amount("ROAD_BUILDING")}枚の${cardLabel("ROAD_BUILDING")}`}
-        >
-          <Paper>
-            <span>{amount("ROAD_BUILDING")}</span>
-            <span>街道</span>
-          </Paper>
-        </div>
-      )}
+      ))}
     </div>
   );
 }

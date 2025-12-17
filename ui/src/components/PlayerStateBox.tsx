@@ -18,7 +18,7 @@ export default function PlayerStateBox({ playerState, playerKey, color }: {
           title="使用済みの騎士カード"
         >
           <span>{playerState[`${playerKey}_PLAYED_KNIGHT`]}</span>
-          <small>騎士</small>
+          <small>騎士(済)</small>
         </div>
         <div
           className={cn("num-roads center-text", {
@@ -27,7 +27,7 @@ export default function PlayerStateBox({ playerState, playerKey, color }: {
           title="最長交易路"
         >
           {playerState[`${playerKey}_LONGEST_ROAD_LENGTH`]}
-          <small>本</small>
+          <small>最長道</small>
         </div>
         <div
           className={cn("victory-points center-text", {
@@ -36,7 +36,7 @@ export default function PlayerStateBox({ playerState, playerKey, color }: {
           title="勝利点"
         >
           {actualVps}
-          <small>点</small>
+          <small>勝利点</small>
         </div>
       </div>
     </div>
