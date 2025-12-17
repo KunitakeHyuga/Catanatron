@@ -94,6 +94,15 @@ export default function HomePage() {
             >
               Catanatron 同士を観戦
             </Button>
+            <div className="records-link">
+              <Button
+                variant="contained"
+                className="records-link-button"
+                onClick={() => navigate("/records")}
+              >
+                対戦記録を見る
+              </Button>
+            </div>
           </>
         ) : (
           <GridLoader

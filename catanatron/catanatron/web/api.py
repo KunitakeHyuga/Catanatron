@@ -4,8 +4,14 @@ import traceback
 from typing import List
 
 from flask import Response, Blueprint, jsonify, abort, request
+from sqlalchemy import func
 
-from catanatron.web.models import upsert_game_state, get_game_state
+from catanatron.web.models import (
+    upsert_game_state,
+    get_game_state,
+    GameState,
+    db,
+)
 from catanatron.json import GameEncoder, action_from_json
 from catanatron.models.player import Color, Player, RandomPlayer
 from catanatron.game import Game
@@ -37,6 +43,36 @@ def post_game_endpoint():
     game = Game(players=players)
     upsert_game_state(game)
     return jsonify({"game_id": game.id})
+
+
+@bp.route("/games", methods=("GET",))
+def list_games_endpoint():
+    results = (
+        db.session.query(
+            GameState.uuid,
+            func.max(GameState.state_index).label("state_index"),
+        )
+        .group_by(GameState.uuid)
+        .order_by(func.max(GameState.state_index).desc())
+        .limit(200)
+        .all()
+    )
+    summaries = []
+    for uuid, state_index in results:
+        game = get_game_state(uuid, state_index)
+        current_color = game.state.current_color()
+        winning_color = game.winning_color()
+        summaries.append(
+            {
+                "game_id": uuid,
+                "state_index": state_index,
+                "winning_color": winning_color.value if winning_color else None,
+                "current_color": current_color.value if current_color else None,
+                "player_colors": [color.value for color in game.state.colors],
+            }
+        )
+
+    return jsonify({"games": summaries})
 
 
 @bp.route("/games/<string:game_id>/states/<string:state_index>", methods=("GET",))

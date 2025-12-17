@@ -10,6 +10,7 @@ import { StateProvider } from "./store";
 
 import "./App.scss";
 import ReplayScreen from "./pages/ReplayScreen";
+import RecordsPage from "./pages/RecordsPage";
 
 const theme = createTheme({
   palette: {
@@ -44,6 +45,8 @@ function App() {
                 path="/games/:gameId"
                 element={<GameScreen replayMode={false} />}
               />
+              <Route path="/records" element={<RecordsPage />} />
+              <Route path="/records/:gameId" element={<RecordsPage />} />
               <Route path="/" element={<HomePage />} />
             </Routes>
           </Router>

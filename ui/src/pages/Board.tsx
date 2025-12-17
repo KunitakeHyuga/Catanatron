@@ -43,6 +43,7 @@ type BoardProps = {
   isMobile: boolean;
   show: boolean;
   isMovingRobber: boolean;
+  fitContainer?: boolean;
 }
 
 export default function Board({
@@ -58,10 +59,11 @@ export default function Board({
   isMobile,
   show,
   isMovingRobber,
+  fitContainer = false,
 }: BoardProps) {
   // TODO: Keep in sync with CSS
-  const containerHeight = height - 144 - 38 - 40;
-  const containerWidth = isMobile ? width - 280 : width;
+  const containerHeight = fitContainer ? height : height - 144 - 38 - 40;
+  const containerWidth = fitContainer ? width : isMobile ? width - 280 : width;
   const center: [number, number] = [containerWidth / 2, containerHeight / 2];
   const size = computeDefaultSize(containerWidth, containerHeight);
   if (!size) {
@@ -113,7 +115,10 @@ export default function Board({
     )
   );
   return (
-    <div className={classnames("board", { show })}>
+    <div
+      className={classnames("board", { show })}
+      style={{ width: containerWidth, height: containerHeight }}
+    >
       {tiles}
       {edges}
       {nodes}

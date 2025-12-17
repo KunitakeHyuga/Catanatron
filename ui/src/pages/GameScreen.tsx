@@ -23,6 +23,7 @@ import RollingDiceOverlay from "../components/RollingDiceOverlay";
 import { colorLabel } from "../utils/i18n";
 import TurnIndicator from "../components/TurnIndicator";
 import BuildCostGuide from "../components/BuildCostGuide";
+import { upsertLocalRecord } from "../utils/localRecords";
 
 const ROBOT_THINKING_TIME = 300;
 
@@ -80,6 +81,13 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
     useRollDisplay(state.gameState);
+
+  useEffect(() => {
+    if (!gameId || !state.gameState || replayMode) {
+      return;
+    }
+    upsertLocalRecord(gameId, state.gameState);
+  }, [gameId, state.gameState, replayMode]);
 
   const humanColor = state.gameState ? getHumanColor(state.gameState) : null;
   const turnLabel = state.gameState

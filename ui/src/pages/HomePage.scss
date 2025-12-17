@@ -22,7 +22,7 @@
   }
 
   .switchable {
-    height: 224px; // NOTE: Fixed to avoid loading jump
+    min-height: 224px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -30,6 +30,27 @@
 
     button {
       margin-bottom: variables.$sm-gutter;
+    }
+
+    .records-link {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: 6px;
+
+      button {
+        width: 220px;
+        background: linear-gradient(135deg, #ffb300, #ff6f00);
+        color: #1a1300;
+        font-weight: 700;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+        &:hover {
+          background: linear-gradient(135deg, #ffc107, #ff8f00);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+        }
+      }
     }
   }
 

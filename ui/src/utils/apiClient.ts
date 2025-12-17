@@ -30,6 +30,21 @@ export async function postAction(gameId: string, action?: GameAction) {
   return response.data;
 }
 
+export type GameRecordSummary = {
+  game_id: string;
+  state_index: number;
+  winning_color: Color | null;
+  current_color: Color;
+  player_colors: Color[];
+};
+
+export async function listGames(): Promise<GameRecordSummary[]> {
+  const response = await axios.get<{ games: GameRecordSummary[] }>(
+    `${API_URL}/api/games`
+  );
+  return response.data.games;
+}
+
 export type MCTSProbabilities = {
   [K in Color]: number;
 };
