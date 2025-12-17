@@ -8,6 +8,8 @@ type RollingDiceOverlayProps = {
   visible: boolean;
   duration?: number;
   onComplete: () => void;
+  currentTurnLabel?: string;
+  currentColorClass?: string;
 };
 
 export default function RollingDiceOverlay({
@@ -15,6 +17,8 @@ export default function RollingDiceOverlay({
   visible,
   duration = 3500,
   onComplete,
+  currentTurnLabel,
+  currentColorClass,
 }: RollingDiceOverlayProps) {
   const [showResult, setShowResult] = useState(false);
 
@@ -50,6 +54,13 @@ export default function RollingDiceOverlay({
         <p className="overlay-message">
           {showResult ? "出目が確定しました！" : "ダイスを振っています..."}
         </p>
+        {currentTurnLabel && (
+          <p className="overlay-turn">
+            <span
+              className={`turn-pill ${currentColorClass ?? ""}`}
+            >{`${currentTurnLabel}の番です`}</span>
+          </p>
+        )}
         <div className="overlay-dice-container">
           {roll.map((value, index) => (
             <div

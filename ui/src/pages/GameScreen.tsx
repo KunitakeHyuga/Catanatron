@@ -20,6 +20,8 @@ import { Divider } from "@mui/material";
 import DiceDisplay from "../components/DiceDisplay";
 import useRollDisplay from "../hooks/useRollDisplay";
 import RollingDiceOverlay from "../components/RollingDiceOverlay";
+import { colorLabel } from "../utils/i18n";
+import TurnIndicator from "../components/TurnIndicator";
 
 const ROBOT_THINKING_TIME = 300;
 
@@ -75,13 +77,20 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     closeSnackbar,
   ]);
 
-  const {
-    displayRoll,
-    displayRollKey,
-    overlayRoll,
-    overlayVisible,
-    finalizeOverlay,
-  } = useRollDisplay(state.gameState);
+  const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
+    useRollDisplay(state.gameState);
+
+  const humanColor = state.gameState ? getHumanColor(state.gameState) : null;
+  const turnLabel = state.gameState
+    ? `${colorLabel(state.gameState.current_color)}${
+        humanColor && humanColor === state.gameState.current_color
+          ? "（あなた）"
+          : ""
+      }`
+    : undefined;
+  const turnPillClass = state.gameState
+    ? `turn-pill-${state.gameState.current_color.toLowerCase()}`
+    : undefined;
 
   if (!state.gameState) {
     return (
@@ -98,9 +107,12 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   return (
     <main>
       <h1 className="logo">Catanatron</h1>
+      <TurnIndicator gameState={state.gameState} />
       <RollingDiceOverlay
         roll={overlayRoll}
         visible={overlayVisible}
+        currentTurnLabel={turnLabel}
+        currentColorClass={turnPillClass}
         onComplete={finalizeOverlay}
       />
       <ZoomableBoard replayMode={replayMode} />

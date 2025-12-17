@@ -16,19 +16,16 @@ import ReplayBox from "../components/ReplayBox";
 import DiceDisplay from "../components/DiceDisplay";
 import useRollDisplay from "../hooks/useRollDisplay";
 import RollingDiceOverlay from "../components/RollingDiceOverlay";
+import { colorLabel } from "../utils/i18n";
+import TurnIndicator from "../components/TurnIndicator";
 
 function ReplayScreen() {
   const { gameId } = useParams();
   const { state, dispatch } = useContext(store);
   const [latestStateIndex, setLatestStateIndex] = useState<number>(0);
   const [stateIndex, setStateIndex] = useState<number>(0);
-  const {
-    displayRoll,
-    displayRollKey,
-    overlayRoll,
-    overlayVisible,
-    finalizeOverlay,
-  } = useRollDisplay(state.gameState);
+  const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
+    useRollDisplay(state.gameState);
 
   const handlePrevState = () => setStateIndex((prev) => Math.max(prev - 1, 0));
   const handleNextState = () => setStateIndex((prev) => Math.min(prev + 1, latestStateIndex));
@@ -54,6 +51,13 @@ function ReplayScreen() {
     })();
   }, [gameId, stateIndex, dispatch]);
 
+  const turnLabel = state.gameState
+    ? colorLabel(state.gameState.current_color)
+    : undefined;
+  const turnPillClass = state.gameState
+    ? `turn-pill-${state.gameState.current_color.toLowerCase()}`
+    : undefined;
+
   if (!state.gameState) {
     return (
       <main>
@@ -69,9 +73,12 @@ function ReplayScreen() {
   return (
     <main>
       <h1 className="logo">Catanatron</h1>
+      <TurnIndicator gameState={state.gameState} />
       <RollingDiceOverlay
         roll={overlayRoll}
         visible={overlayVisible}
+        currentTurnLabel={turnLabel}
+        currentColorClass={turnPillClass}
         onComplete={finalizeOverlay}
       />
       <ZoomableBoard replayMode={true} />
