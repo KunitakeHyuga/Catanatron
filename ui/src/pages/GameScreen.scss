@@ -48,6 +48,12 @@ main {
     text-align: center;
   }
 
+  .game-end-actions {
+    margin: 10px auto 0;
+    display: flex;
+    justify-content: center;
+  }
+
   background: variables.$black;
   color: white;
   height: 100%;

@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import { GridLoader } from "react-spinners";
 import { useSnackbar } from "notistack";
@@ -16,7 +16,7 @@ import { type StateIndex, getState, postAction } from "../utils/apiClient";
 import { dispatchSnackbar } from "../components/Snackbar";
 import { getHumanColor } from "../utils/stateUtils";
 import AnalysisBox from "../components/AnalysisBox";
-import { Divider } from "@mui/material";
+import { Button, Divider } from "@mui/material";
 import DiceDisplay from "../components/DiceDisplay";
 import useRollDisplay from "../hooks/useRollDisplay";
 import RollingDiceOverlay from "../components/RollingDiceOverlay";
@@ -118,6 +118,18 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       />
       <ZoomableBoard replayMode={replayMode} />
       <ActionsToolbar isBotThinking={isBotThinking} replayMode={replayMode} />
+      {state.gameState.winning_color && (
+        <div className="game-end-actions">
+          <Button
+            component={Link}
+            to="/"
+            variant="contained"
+            color="secondary"
+          >
+            ホームに戻る
+          </Button>
+        </div>
+      )}
       <LeftDrawer />
       <RightDrawer>
         <AnalysisBox stateIndex={"latest"}/>
