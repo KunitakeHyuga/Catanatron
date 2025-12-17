@@ -2,20 +2,32 @@ import { isPlayersTurn } from "../utils/stateUtils";
 import { type GameState } from "../utils/api.types";
 
 import "./Prompt.scss";
+import { colorLabel } from "../utils/i18n";
+
+const PROMPT_LABELS: Record<string, string> = {
+  ROLL: "あなたの番です",
+  PLAY_TURN: "あなたの番です",
+  DISCARD: "資源を捨ててください",
+  BUILD_INITIAL_SETTLEMENT: "初期開拓地を建設してください",
+  BUILD_INITIAL_ROAD: "初期街道を建設してください",
+  BUILD_SETTLEMENT: "開拓地を建設してください",
+  BUILD_CITY: "都市を建設してください",
+  BUILD_ROAD: "街道を建設してください",
+  PLAY_KNIGHT_CARD: "騎士カードを使ってください",
+  PLAY_ROAD_BUILDING: "街道建設カードを使ってください",
+  PLAY_MONOPOLY: "独占カードを使ってください",
+  PLAY_YEAR_OF_PLENTY: "豊穣の年カードを使ってください",
+  MOVE_ROBBER: "盗賊を移動してください",
+  MARITIME_TRADE: "港で交易してください",
+  END_TURN: "ターンを終了してください",
+};
 
 function humanizePrompt(currentPrompt: string): string {
-  switch (currentPrompt) {
-    case "ROLL":
-      return `YOUR TURN`;
-    case "PLAY_TURN":
-      return `YOUR TURN`;
-    case "BUILD_INITIAL_SETTLEMENT":
-    case "BUILD_INITIAL_ROAD":
-    default: {
-      const prompt = currentPrompt.replaceAll("_", " ");
-      return `PLEASE ${prompt}`;
-    }
+  if (PROMPT_LABELS[currentPrompt]) {
+    return PROMPT_LABELS[currentPrompt];
   }
+  const prompt = currentPrompt.replaceAll("_", " ");
+  return `${prompt} を実行してください`;
 }
 
 export default function Prompt({
@@ -27,13 +39,11 @@ export default function Prompt({
 }) {
   let prompt = "";
   if (isBotThinking) {
-    // Do nothing, but still render.
+    prompt = "ボットが思考中です…";
   } else if (gameState.winning_color) {
-    prompt = `Game Over. Congrats, ${gameState.winning_color}!`;
+    prompt = `ゲーム終了。${colorLabel(gameState.winning_color)}の勝ちです！`;
   } else if (isPlayersTurn(gameState)) {
     prompt = humanizePrompt(gameState.current_prompt);
-  } else {
-    // prompt = humanizeAction(gameState.actions[gameState.actions.length - 1], gameState.bot_colors);
   }
   return <div className="prompt">{prompt}</div>;
 }

@@ -106,7 +106,7 @@ def stress_test_endpoint():
 )
 def mcts_analysis_endpoint(game_id, state_index):
     """Get MCTS analysis for specific game state."""
-    logging.info(f"MCTS analysis request for game {game_id} at state {state_index}")
+    logging.info(f"ゲーム {game_id} の状態 {state_index} に対する MCTS 解析リクエストを受信しました")
 
     # Convert 'latest' to None for consistency with get_game_state
     parsed_state_index = _parse_state_index(state_index)
@@ -114,14 +114,14 @@ def mcts_analysis_endpoint(game_id, state_index):
         game = get_game_state(game_id, parsed_state_index)
         if game is None:
             logging.error(
-                f"Game/state not found: {game_id}/{state_index}"
+                f"ゲームまたは状態が見つかりません: {game_id}/{state_index}"
             )  # Use original state_index for logging
             abort(404, description="Game state not found")
 
         analyzer = GameAnalyzer(num_simulations=100)
         probabilities = analyzer.analyze_win_probabilities(game)
 
-        logging.info(f"Analysis successful. Probabilities: {probabilities}")
+        logging.info(f"MCTS 解析に成功。勝率: {probabilities}")
         return Response(
             response=json.dumps(
                 {
@@ -139,7 +139,7 @@ def mcts_analysis_endpoint(game_id, state_index):
         )
 
     except Exception as e:
-        logging.error(f"Error in MCTS analysis endpoint: {str(e)}")
+        logging.error(f"MCTS 解析エンドポイントでエラー: {str(e)}")
         logging.error(traceback.format_exc())
         return Response(
             response=json.dumps(

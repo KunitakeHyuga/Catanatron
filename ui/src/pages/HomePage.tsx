@@ -28,7 +28,7 @@ function getPlayers(gameMode: GameModeType, numPlayers: number) {
     case GameMode.CATANATRON_BOTS:
       return Array(numPlayers).fill("CATANATRON");
     default:
-      throw new Error("Invalid Game Mode");
+      throw new Error("不正なゲームモードです");
   }
 }
 
@@ -53,11 +53,11 @@ export default function HomePage() {
         {!loading ? (
           <>
             <ul>
-              <li>OPEN HAND</li>
-              <li>NO CHOICE DURING DISCARD</li>
+              <li>手札は常に公開</li>
+              <li>資源破棄の選択肢なし</li>
             </ul>
             <div className="player-count-selector">
-              <div className="player-count-label">Number of Players</div>
+              <div className="player-count-label">プレイヤー人数</div>
               <div className="player-count-buttons">
                 {[2, 3, 4].map((value) => (
                   <Button
@@ -68,7 +68,7 @@ export default function HomePage() {
                       numPlayers === value ? "selected" : ""
                     }`}
                   >
-                    {value} Players
+                    {value}人
                   </Button>
                 ))}
               </div>
@@ -78,21 +78,21 @@ export default function HomePage() {
               color="primary"
               onClick={() => handleCreateGame(GameMode.HUMAN_VS_CATANATRON)}
             >
-              Play against Catanatron
+              Catanatron と対戦する
             </Button>
             <Button
               variant="contained"
               color="secondary"
               onClick={() => handleCreateGame(GameMode.RANDOM_BOTS)}
             >
-              Watch Random Bots
+              ランダムボットを観戦
             </Button>
             <Button
               variant="contained"
               color="secondary"
               onClick={() => handleCreateGame(GameMode.CATANATRON_BOTS)}
             >
-              Watch Catanatron
+              Catanatron 同士を観戦
             </Button>
           </>
         ) : (

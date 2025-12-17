@@ -30,10 +30,16 @@ def action_from_json(data):
             raise ValueError("Year of Plenty action must have 1 or 2 resources")
         action = Action(color, action_type, resources)
     elif action_type == ActionType.MOVE_ROBBER:
-        coordinate, victim, _ = data[2]
+        raw_value = data[2]
+        if len(raw_value) == 2:
+            coordinate, victim = raw_value
+        elif len(raw_value) >= 3:
+            coordinate, victim = raw_value[0], raw_value[1]
+        else:
+            raise ValueError("MOVE_ROBBER action requires a coordinate and victim")
         coordinate = tuple(coordinate)
         victim = Color[victim] if victim else None
-        value = (coordinate, victim, None)
+        value = (coordinate, victim)
         action = Action(color, action_type, value)
     elif action_type == ActionType.MARITIME_TRADE:
         value = tuple(data[2])

@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import "./ResourceSelector.scss";
 import type { ResourceCard } from "../utils/api.types";
+import { resourceLabel } from "../utils/i18n";
 
 type ResourceSelectorProps = {
   open: boolean;
@@ -61,7 +62,7 @@ const ResourceSelector = ({
 
   const getResourceSpan = (resource: ResourceCard) => (
     <span className={`resource-name ${resource.toLowerCase()}`}>
-      {resource}
+      {resourceLabel(resource)}
     </span>
   );
 
@@ -75,7 +76,7 @@ const ResourceSelector = ({
       return (
         <>
           {getResourceSpan(option[0])}
-          <span className="plus">x1</span>
+          <span className="plus">×1</span>
         </>
       );
     } else {
@@ -99,8 +100,8 @@ const ResourceSelector = ({
     >
       <DialogTitle>
         {mode === "monopoly"
-          ? "Select Resource to Monopolize"
-          : "Select Resources for Year of Plenty"}
+          ? "独占する資源を選択"
+          : "豊穣の年で受け取る資源を選択"}
       </DialogTitle>
       <DialogContent>
         <div className="resource-grid">
@@ -120,7 +121,7 @@ const ResourceSelector = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} className="cancel-button">
-          Cancel
+          キャンセル
         </Button>
       </DialogActions>
     </Dialog>

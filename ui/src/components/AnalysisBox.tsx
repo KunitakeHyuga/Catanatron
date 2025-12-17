@@ -6,6 +6,8 @@ import { useParams } from "react-router";
 
 import "./AnalysisBox.scss";
 import { store } from "../store";
+import { colorLabel } from "../utils/i18n";
+import type { Color } from "../utils/api.types";
 
 type AnalysisBoxProps = {
     stateIndex: StateIndex;
@@ -28,16 +30,16 @@ export default function AnalysisBox( { stateIndex }: AnalysisBoxProps ) {
       if (result.success) {
         setMctsResults(result.probabilities);
       } else {
-        setError(result.error || "Analysis failed");
+        setError(result.error || "解析に失敗しました");
       }
     } catch (err) {
-      console.error("MCTS Analysis failed:", err);
+      console.error("MCTS解析に失敗しました:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else if (typeof err === "string") {
         setError(err);
       } else {
-        setError("An unknown error occurred");
+        setError("原因不明のエラーが発生しました");
       }
     } finally {
       setLoading(false);
@@ -47,7 +49,7 @@ export default function AnalysisBox( { stateIndex }: AnalysisBoxProps ) {
   return (
     <div className="analysis-box">
       <div className="analysis-header">
-        <h3>Win Probability Analysis</h3>
+        <h3>勝率解析</h3>
         <Button
           variant="contained"
           color="primary"
@@ -55,7 +57,7 @@ export default function AnalysisBox( { stateIndex }: AnalysisBoxProps ) {
           disabled={loading || !!state.gameState?.winning_color}
           startIcon={loading ? <CircularProgress size={20} /> : <AssessmentIcon />}
         >
-          {loading ? "Analyzing..." : "Analyze"}
+          {loading ? "解析中..." : "解析する"}
         </Button>
       </div>
 
@@ -69,7 +71,7 @@ export default function AnalysisBox( { stateIndex }: AnalysisBoxProps ) {
         <div className="probability-bars">
           {Object.entries(mctsResults).map(([color, probability]) => (
             <div key={color} className={`probability-row ${color.toLowerCase()}`}>
-              <span className="player-color">{color}</span>
+              <span className="player-color">{colorLabel(color as Color)}</span>
               <span className="probability-bar">
                 <div
                   className="bar-fill"

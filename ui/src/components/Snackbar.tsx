@@ -12,7 +12,7 @@ export const snackbarActions =
       <>
         <IconButton
           size="small"
-          aria-label="close"
+          aria-label="閉じる"
           color="inherit"
           onClick={() => closeSnackbar(key)}
         >

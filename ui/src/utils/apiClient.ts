@@ -50,25 +50,25 @@ export async function getMctsAnalysis(
   stateIndex: StateIndex = "latest"
 ) {
   try {
-    console.log("Getting MCTS analysis for:", {
+    console.log("MCTS解析の取得中:", {
       gameId,
       stateIndex,
       url: `${API_URL}/api/games/${gameId}/states/${stateIndex}/mcts-analysis`,
     });
 
     if (!gameId) {
-      throw new Error("No gameId provided to getMctsAnalysis");
+      throw new Error("getMctsAnalysis に gameId が指定されていません");
     }
 
     const response = await axios.get<MCTSSuccessBody | MCTSErrorBody>(
       `${API_URL}/api/games/${gameId}/states/${stateIndex}/mcts-analysis`
     );
 
-    console.log("MCTS analysis response:", response.data);
+    console.log("MCTS解析のレスポンス:", response.data);
     return response.data;
   } catch (error: any) {
     // AxiosResponse<MCTSErrorBody>
-    console.error("MCTS analysis error:", {
+    console.error("MCTS解析でエラー:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,

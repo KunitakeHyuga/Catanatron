@@ -15,28 +15,28 @@ export default function PlayerStateBox({ playerState, playerKey, color }: {
           className={cn("num-knights center-text", {
             bold: playerState[`${playerKey}_HAS_ARMY`],
           })}
-          title="Knights Played"
+          title="使用済みの騎士カード"
         >
           <span>{playerState[`${playerKey}_PLAYED_KNIGHT`]}</span>
-          <small>knights</small>
+          <small>騎士</small>
         </div>
         <div
           className={cn("num-roads center-text", {
             bold: playerState[`${playerKey}_HAS_ROAD`],
           })}
-          title="Longest Road"
+          title="最長交易路"
         >
           {playerState[`${playerKey}_LONGEST_ROAD_LENGTH`]}
-          <small>roads</small>
+          <small>本</small>
         </div>
         <div
           className={cn("victory-points center-text", {
             bold: actualVps >= 10,
           })}
-          title="Victory Points"
+          title="勝利点"
         >
           {actualVps}
-          <small>VPs</small>
+          <small>点</small>
         </div>
       </div>
     </div>

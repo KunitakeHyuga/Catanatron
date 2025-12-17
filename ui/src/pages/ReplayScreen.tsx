@@ -13,12 +13,22 @@ import { getState } from "../utils/apiClient";
 import AnalysisBox from "../components/AnalysisBox";
 import { Divider } from "@mui/material";
 import ReplayBox from "../components/ReplayBox";
+import DiceDisplay from "../components/DiceDisplay";
+import useRollDisplay from "../hooks/useRollDisplay";
+import RollingDiceOverlay from "../components/RollingDiceOverlay";
 
 function ReplayScreen() {
   const { gameId } = useParams();
   const { state, dispatch } = useContext(store);
   const [latestStateIndex, setLatestStateIndex] = useState<number>(0);
   const [stateIndex, setStateIndex] = useState<number>(0);
+  const {
+    displayRoll,
+    displayRollKey,
+    overlayRoll,
+    overlayVisible,
+    finalizeOverlay,
+  } = useRollDisplay(state.gameState);
 
   const handlePrevState = () => setStateIndex((prev) => Math.max(prev - 1, 0));
   const handleNextState = () => setStateIndex((prev) => Math.min(prev + 1, latestStateIndex));
@@ -59,10 +69,17 @@ function ReplayScreen() {
   return (
     <main>
       <h1 className="logo">Catanatron</h1>
+      <RollingDiceOverlay
+        roll={overlayRoll}
+        visible={overlayVisible}
+        onComplete={finalizeOverlay}
+      />
       <ZoomableBoard replayMode={true} />
       <LeftDrawer />
       <RightDrawer>
         <AnalysisBox stateIndex={stateIndex}/>
+        <Divider />
+        <DiceDisplay roll={displayRoll} />
         <Divider />
         <ReplayBox
           stateIndex={stateIndex}

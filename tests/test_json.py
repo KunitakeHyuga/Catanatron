@@ -65,7 +65,7 @@ def test_action_from_json_move_robber_with_victim():
     action = action_from_json(data)
     assert action.color == Color.ORANGE
     assert action.action_type == ActionType.MOVE_ROBBER
-    assert action.value == ((0, 0, 0), Color.RED, None)
+    assert action.value == ((0, 0, 0), Color.RED)
 
 
 def test_action_from_json_move_robber_without_victim():
@@ -73,7 +73,15 @@ def test_action_from_json_move_robber_without_victim():
     action = action_from_json(data)
     assert action.color == Color.RED
     assert action.action_type == ActionType.MOVE_ROBBER
-    assert action.value == ((1, -1, 0), None, None)
+    assert action.value == ((1, -1, 0), None)
+
+
+def test_action_from_json_move_robber_compact_payload():
+    data = ["BLUE", "MOVE_ROBBER", [[2, -2, 0], "WHITE"]]
+    action = action_from_json(data)
+    assert action.color == Color.BLUE
+    assert action.action_type == ActionType.MOVE_ROBBER
+    assert action.value == ((2, -2, 0), Color.WHITE)
 
 
 def test_action_from_json_build_road():

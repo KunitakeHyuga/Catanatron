@@ -39,7 +39,7 @@ import { dispatchSnackbar } from "../components/Snackbar";
 function PlayButtons() {
   const { gameId } = useParams();
   if (!gameId) {
-    console.error("Game ID is not found in URL parameters.");
+    console.error("URL パラメーターにゲームIDが見つかりません。");
     return null;
   }
   const { state, dispatch } = useContext(store);
@@ -103,7 +103,7 @@ function PlayButtons() {
           selectedResources as [ResourceCard] | [ResourceCard, ResourceCard],
         ];
       } else {
-        console.error("Invalid resource selector mode");
+        console.error("無効な資源選択モードです");
         return;
       }
       const gameState = await postAction(gameId, action);
@@ -141,22 +141,22 @@ function PlayButtons() {
   }, [gameId, dispatch, enqueueSnackbar, closeSnackbar, humanColor]);
   const useItems = [
     {
-      label: "Monopoly",
+      label: "独占カード",
       disabled: !playableDevCardTypes.has("PLAY_MONOPOLY"),
       onClick: setIsPlayingMonopoly,
     },
     {
-      label: "Year of Plenty",
+      label: "豊穣の年カード",
       disabled: !playableDevCardTypes.has("PLAY_YEAR_OF_PLENTY"),
       onClick: setIsPlayingYearOfPlenty,
     },
     {
-      label: "Road Building",
+      label: "街道建設カード",
       disabled: !playableDevCardTypes.has("PLAY_ROAD_BUILDING"),
       onClick: playRoadBuilding,
     },
     {
-      label: "Knight",
+      label: "騎士カード",
       disabled: !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
       onClick: playKnightCard,
     },
@@ -189,22 +189,22 @@ function PlayButtons() {
   }, [dispatch]);
   const buildItems = [
     {
-      label: "Development Card",
+      label: "開発カードを購入",
       disabled: !buildActionTypes.has("BUY_DEVELOPMENT_CARD"),
       onClick: buyDevCard,
     },
     {
-      label: "City",
+      label: "都市",
       disabled: !buildActionTypes.has("BUILD_CITY"),
       onClick: setIsBuildingCity,
     },
     {
-      label: "Settlement",
+      label: "開拓地",
       disabled: !buildActionTypes.has("BUILD_SETTLEMENT"),
       onClick: setIsBuildingSettlement,
     },
     {
-      label: "Road",
+      label: "街道",
       disabled: !buildActionTypes.has("BUILD_ROAD"),
       onClick: toggleBuildingRoad,
     },
@@ -240,7 +240,7 @@ function PlayButtons() {
         icon={<SimCardIcon />}
         items={useItems}
       >
-        Use
+        使用
       </OptionsButton>
       <OptionsButton
         disabled={buildActionTypes.size === 0 || isPlayingDevCard}
@@ -248,7 +248,7 @@ function PlayButtons() {
         icon={<BuildIcon />}
         items={buildItems}
       >
-        Buy
+        建設/購入
       </OptionsButton>
       <OptionsButton
         disabled={tradeItems.length === 0 || isPlayingDevCard}
@@ -256,7 +256,7 @@ function PlayButtons() {
         icon={<AccountBalanceIcon />}
         items={tradeItems}
       >
-        Trade
+        交易
       </OptionsButton>
       <Button
         disabled={gameState.is_initial_build_phase || isRoadBuilding}
@@ -276,14 +276,14 @@ function PlayButtons() {
         }
       >
         {isDiscard
-          ? "DISCARD"
+          ? "捨てる"
           : isMoveRobber
-          ? "ROB"
+          ? "盗賊"
           : isPlayingYearOfPlenty || isPlayingMonopoly
-          ? "SELECT"
+          ? "選択"
           : isRoll
-          ? "ROLL"
-          : "END"}
+          ? "ダイスを振る"
+          : "ターン終了"}
       </Button>
       <ResourceSelector
         open={resourceSelectorOpen}
@@ -310,7 +310,7 @@ export default function ActionsToolbar({
   const { state, dispatch } = useContext(store);
   const { gameState } = state;
   if (gameState === null) {
-    console.error("No gameState found...");
+    console.error("ゲーム状態が見つかりません。");
     return null;
   }
   const openLeftDrawer = useCallback(() => {

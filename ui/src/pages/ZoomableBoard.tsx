@@ -21,7 +21,7 @@ import type { GameAction, TileCoordinate } from "../utils/api.types";
  */
 function buildNodeActions(state: CatanState) {
   if (!state.gameState)
-    throw new Error("GameState is not ready!");
+    throw new Error("ゲーム状態の準備が整っていません。");
 
   if (!isPlayersTurn(state.gameState)) {
     return {};
@@ -56,7 +56,7 @@ function buildNodeActions(state: CatanState) {
 
 function buildEdgeActions(state: CatanState) {
   if (!state.gameState)
-    throw new Error("GameState is not ready!");
+    throw new Error("ゲーム状態の準備が整っていません。");
   if (!isPlayersTurn(state.gameState)) {
     return {};
   }
@@ -96,15 +96,15 @@ export default function ZoomableBoard({ replayMode }: ZoomableBoardProps) {
   const [show, setShow] = useState(false);
   const gameState = state.gameState
   if (!gameState)
-    throw new Error("GameState is not ready!");
+    throw new Error("ゲーム状態の準備が整っていません。");
   if (!gameId)
-    throw new Error("expecting gameId in URL");
+    throw new Error("URL に gameId が含まれていません。");
 
   // TODO: Move these up to GameScreen and let Zoomable be presentational component
   // https://stackoverflow.com/questions/61255053/react-usecallback-with-parameter
   const buildOnNodeClick = useCallback(
     memoize((id, action) => async () => {
-      console.log("Clicked Node ", id, action);
+      console.log("ノードをクリックしました:", id, action);
       if (action) {
         const gameState = await postAction(gameId, action);
         dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
@@ -114,7 +114,7 @@ export default function ZoomableBoard({ replayMode }: ZoomableBoardProps) {
   );
   const buildOnEdgeClick = useCallback(
     memoize((id, action) => async () => {
-      console.log("Clicked Edge ", id, action);
+      console.log("エッジをクリックしました:", id, action);
       if (action) {
         const gameState = await postAction(gameId, action);
         dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
@@ -123,24 +123,28 @@ export default function ZoomableBoard({ replayMode }: ZoomableBoardProps) {
     []
   );
   const handleTileClick = useCallback(
-    memoize((coordinate: TileCoordinate) => {
-      console.log("Clicked Tile ", coordinate);
-      if (state.isMovingRobber) {
-        // Find the "MOVE_ROBBER" action in current_playable_actions that
-        // corresponds to the tile coordinate selected by the user
-        const matchingAction = gameState.current_playable_actions.find(
-          ([, action_type, [action_coordinate, ,]]) =>
-            action_type === "MOVE_ROBBER" &&
-            action_coordinate.every((val: number, index: number) => val === coordinate[index])
-        );
-        if (matchingAction) {
-          postAction(gameId, matchingAction).then((gameState) => {
-            dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-          });
-        }
+    (coordinate: TileCoordinate) => {
+      console.log("タイルをクリックしました:", coordinate);
+      if (!state.isMovingRobber) {
+        return;
       }
-    }),
-    [state.isMovingRobber]
+      // Find the "MOVE_ROBBER" action in current_playable_actions that
+      // corresponds to the tile coordinate selected by the user
+      const matchingAction = gameState.current_playable_actions.find(
+        ([, action_type, [action_coordinate, ,]]) =>
+          action_type === "MOVE_ROBBER" &&
+          action_coordinate.every(
+            (val: number, index: number) => val === coordinate[index]
+          )
+      );
+      if (!matchingAction) {
+        return;
+      }
+      postAction(gameId, matchingAction).then((gameState) => {
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+      });
+    },
+    [dispatch, gameId, gameState.current_playable_actions, state.isMovingRobber]
   );
 
   const nodeActions = replayMode ? {} : buildNodeActions(state);

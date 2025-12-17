@@ -48,8 +48,7 @@ export function register(config: any) {
         // service worker/PWA documentation.
         navigator.serviceWorker.ready.then(() => {
           console.log(
-            "This web app is being served cache-first by a service " +
-              "worker. To learn more, visit https://bit.ly/CRA-PWA"
+            "この Web アプリは service worker によりキャッシュ優先で配信されています。詳細は https://bit.ly/CRA-PWA を参照してください。"
           );
         });
       } else {
@@ -76,8 +75,7 @@ function registerValidSW(swUrl: string | URL, config: any) {
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
               console.log(
-                'New content is available and will be used when all ' +
-                  'tabs for this page are closed. See https://bit.ly/CRA-PWA.'
+                "新しいコンテンツが利用可能です。すべてのタブを閉じると更新が反映されます。https://bit.ly/CRA-PWA を参照してください。"
               );
 
               // Execute callback
@@ -88,7 +86,7 @@ function registerValidSW(swUrl: string | URL, config: any) {
               // At this point, everything has been precached.
               // It's the perfect time to display a
               // "Content is cached for offline use." message.
-              console.log('Content is cached for offline use.');
+              console.log("コンテンツはオフライン利用のためにキャッシュされました。");
 
               // Execute callback
               if (config && config.onSuccess) {
@@ -100,7 +98,7 @@ function registerValidSW(swUrl: string | URL, config: any) {
       };
     })
     .catch(error => {
-      console.error('Error during service worker registration:', error);
+      console.error("service worker 登録中にエラーが発生しました:", error);
     });
 }
 
@@ -129,7 +127,7 @@ function checkValidServiceWorker(swUrl: string | URL, config: any) {
     })
     .catch(() => {
       console.log(
-        'No internet connection found. App is running in offline mode.'
+        "インターネット接続が見つかりません。アプリはオフラインモードで動作しています。"
       );
     });
 }
@@ -141,7 +139,7 @@ export function unregister() {
         registration.unregister();
       })
       .catch(error => {
-        console.error(error.message);
+        console.error("service worker の登録解除でエラーが発生しました:", error.message);
       });
   }
 }

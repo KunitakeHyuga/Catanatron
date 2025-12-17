@@ -38,9 +38,9 @@ export default function ReplayBox({stateIndex,
 
   return (
     <div className="replay-box">
-      <h3>Replay</h3>
+      <h3>リプレイ</h3>
 
-      Move: {stateIndex} / {latestStateIndex}
+      手数: {stateIndex} / {latestStateIndex}
 
       <Slider
         className="move-slider"
@@ -52,7 +52,7 @@ export default function ReplayBox({stateIndex,
       />
 
       <NumericTextInput
-        label="Go to move"
+        label="指定の手数へ"
         size="small"
         value={inputValue}
         onChange={setInputValue}
@@ -67,7 +67,7 @@ export default function ReplayBox({stateIndex,
           startIcon={<ArrowBackIos />}
           disabled={stateIndex === 0}
         >
-          Prev Move
+          前の手
         </Button>
 
         <Button
@@ -77,7 +77,7 @@ export default function ReplayBox({stateIndex,
           startIcon={<ArrowForwardIos />}
           disabled={stateIndex === latestStateIndex}
         >
-          Next Move
+          次の手
         </Button>
       </div>
 
