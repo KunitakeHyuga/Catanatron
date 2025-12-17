@@ -436,6 +436,7 @@ function OptionsButton({
   return (
     <React.Fragment>
       <Button
+        className="action-button"
         disabled={disabled}
         ref={anchorRef}
         href="#"

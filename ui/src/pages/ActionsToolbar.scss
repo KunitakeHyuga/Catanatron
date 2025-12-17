@@ -30,6 +30,13 @@ $btn-height: 60px;
     width: 100px;
     height: $btn-height;
   }
+  .action-button.Mui-disabled {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+    opacity: 1;
+  }
 
   .confirm-btn {
     width: 100%;
