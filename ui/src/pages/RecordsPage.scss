@@ -27,16 +27,16 @@
 
     .records-home-btn {
       padding: 8px 16px;
-      background: linear-gradient(135deg, #ffb300, #ff6f00);
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
       border: none;
       border-radius: 6px;
-      color: #1a1300;
+      color: #e8ffe8;
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 
       &:hover {
-        background: linear-gradient(135deg, #ffc107, #ff8f00);
+        background: linear-gradient(135deg, #66bb6a, #388e3c);
       }
     }
   }
