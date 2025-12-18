@@ -32,6 +32,11 @@
       margin-bottom: variables.$sm-gutter;
     }
 
+    .main-action-button {
+      width: 220px;
+      max-width: 100%;
+    }
+
     .records-link {
       width: 100%;
       display: flex;
@@ -39,7 +44,6 @@
       margin-top: 6px;
 
       button {
-        width: 220px;
         background: linear-gradient(135deg, #ffb300, #ff6f00);
         color: #1a1300;
         font-weight: 700;

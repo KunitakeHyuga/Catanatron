@@ -76,6 +76,7 @@ export default function HomePage() {
             <Button
               variant="contained"
               color="primary"
+              className="main-action-button"
               onClick={() => handleCreateGame(GameMode.HUMAN_VS_CATANATRON)}
             >
               Catanatron と対戦する
@@ -83,6 +84,7 @@ export default function HomePage() {
             <Button
               variant="contained"
               color="secondary"
+              className="main-action-button"
               onClick={() => handleCreateGame(GameMode.RANDOM_BOTS)}
             >
               ランダムボットを観戦
@@ -90,6 +92,7 @@ export default function HomePage() {
             <Button
               variant="contained"
               color="secondary"
+              className="main-action-button"
               onClick={() => handleCreateGame(GameMode.CATANATRON_BOTS)}
             >
               Catanatron 同士を観戦
@@ -97,7 +100,7 @@ export default function HomePage() {
             <div className="records-link">
               <Button
                 variant="contained"
-                className="records-link-button"
+                className="main-action-button records-link-button"
                 onClick={() => navigate("/records")}
               >
                 対戦記録を見る
