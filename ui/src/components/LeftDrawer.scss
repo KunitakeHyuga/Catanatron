@@ -4,7 +4,7 @@ $dark-divider: rgb(0 0 0 / 80%);
 
 .left-drawer {
   .MuiDrawer-paper {
-    width: 340px;
+    width: min(535px, 95vw);
     background: variables.$dark-gray;
   }
 
