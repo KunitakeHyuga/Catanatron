@@ -33,12 +33,14 @@ export default function DiceDisplay({ roll }: DiceDisplayProps) {
 
   return (
     <section className="dice-display" aria-label="直近の出目">
-      <div className="dice-label">直近の出目</div>
+      <div className="dice-info">
+        <div className="dice-label">直近の出目</div>
+        <div className="dice-total">合計 {total}</div>
+      </div>
       <div className="dice-values">
         {renderDie(first, 0)}
         {renderDie(second, 1)}
       </div>
-      <div className="dice-total">合計 {total}</div>
     </section>
   );
 }

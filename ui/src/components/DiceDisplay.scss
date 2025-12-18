@@ -11,11 +11,26 @@
   max-width: 540px;
   perspective: 700px;
 
-  .dice-label {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #000000;
-    white-space: nowrap;
+  .dice-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    min-width: 120px;
+
+    .dice-label {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #000000;
+      white-space: nowrap;
+    }
+
+    .dice-total {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #333333;
+      white-space: nowrap;
+    }
   }
 
   .dice-values {
@@ -50,10 +65,6 @@
     letter-spacing: 3px;
   }
 
-  .dice-total {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
 }
 
 @keyframes dice-spin {
