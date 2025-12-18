@@ -58,7 +58,7 @@
   .records-list {
     flex: 0 0 280px;
     width: 100%;
-    max-width: 320px;
+    max-width: 420px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -85,13 +85,13 @@
     .record-item {
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 6px;
-      padding: 8px;
+      padding: 12px;
       text-align: left;
       background: rgba(0, 0, 0, 0.35);
       color: inherit;
       cursor: pointer;
       transition: border-color 0.2s ease, transform 0.2s ease;
-      overflow: hidden;
+      min-height: 60px;
 
       .game-id {
         font-size: 0.85rem;
@@ -105,10 +105,17 @@
       .game-meta {
         font-size: 0.8rem;
         display: flex;
-        justify-content: space-between;
-        gap: 8px;
+        justify-content: flex-start;
+        gap: 16px;
+        flex-wrap: nowrap;
         white-space: nowrap;
         overflow: hidden;
+
+        span {
+          display: inline-flex;
+          align-items: center;
+          white-space: nowrap;
+        }
       }
 
       &:hover {

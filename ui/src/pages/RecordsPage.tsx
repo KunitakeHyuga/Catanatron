@@ -174,6 +174,12 @@ export default function RecordsPage() {
                         : "進行中"}
                     </span>
                     <span>ターン {game.state_index}</span>
+                    <span>
+                      プレイヤー数:{" "}
+                      {game.player_colors?.length
+                        ? `${game.player_colors.length}人`
+                        : "不明"}
+                    </span>
                   </div>
                 </button>
               ))}
@@ -202,6 +208,12 @@ export default function RecordsPage() {
                 <div>
                   <span className="summary-label">ターン数:</span>
                   <span className="summary-value">{gameState.state_index}</span>
+                </div>
+                <div>
+                  <span className="summary-label">プレイヤー数:</span>
+                  <span className="summary-value">
+                    {gameState.colors.length}人
+                  </span>
                 </div>
               </section>
               <section className="records-detail-body">
