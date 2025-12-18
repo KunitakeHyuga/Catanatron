@@ -9,6 +9,10 @@ $dark-divider: rgb(0 0 0 / 80%);
     display: flex;
     flex-direction: column;
     gap: variables.$sm-gutter;
+
+    .drawer-home-btn {
+      font-weight: 700;
+    }
   }
 
   .MuiDrawer-paper {

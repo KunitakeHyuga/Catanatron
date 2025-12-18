@@ -1,6 +1,8 @@
 import { useCallback, useContext, type PropsWithChildren } from "react";
+import { Link } from "react-router-dom";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Drawer from "@mui/material/Drawer";
+import Button from "@mui/material/Button";
 import { isTabOrShift, type InteractionEvent } from "../utils/events";
 
 import Hidden from "./Hidden";
@@ -49,6 +51,15 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
           onKeyDown={closeRightDrawer}
         >
           <div className="drawer-content">
+            <Button
+              component={Link}
+              to="/"
+              variant="contained"
+              color="secondary"
+              className="drawer-home-btn"
+            >
+              ホームに戻る
+            </Button>
             {children}
           </div>
         </SwipeableDrawer>
@@ -61,6 +72,16 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
           open
         >
           <div className="drawer-content">
+            <Button
+              component={Link}
+              to="/"
+              variant="contained"
+              color="secondary"
+              className="drawer-home-btn"
+              fullWidth
+            >
+              ホームに戻る
+            </Button>
             {children}
           </div>
         </Drawer>
