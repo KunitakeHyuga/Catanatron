@@ -1,3 +1,4 @@
+import cn from "classnames";
 import { Paper } from "@mui/material";
 import { type PlayerState } from "../utils/api.types";
 import { type Card, type ResourceCard } from "../utils/api.types";
@@ -21,16 +22,26 @@ const DEV_CARDS: Card[] = [
   "ROAD_BUILDING",
 ];
 
+type ResourceCardsProps = {
+  playerState: PlayerState;
+  playerKey: string;
+  wrapDevCards?: boolean;
+};
+
 export default function ResourceCards({
   playerState,
   playerKey,
-}: {
-  playerState: PlayerState;
-  playerKey: string;
-}) {
+  wrapDevCards = true,
+}: ResourceCardsProps) {
   const amount = (card: Card) => playerState[`${playerKey}_${card}_IN_HAND`];
   return (
-    <div className="resource-cards" title="資源カード">
+    <div
+      className={cn("resource-cards", {
+        "wrap-layout": wrapDevCards,
+        "inline-layout": !wrapDevCards,
+      })}
+      title="資源カード"
+    >
       {RESOURCE_CARDS.map((card) => (
         <div
           key={card}

@@ -3,12 +3,17 @@ import cn from "classnames";
 import "./PlayerStateBox.scss";
 import { type Color, type PlayerState } from "../utils/api.types";
 import ResourceCards from "./ResourceCards";
+import { colorLabel } from "../utils/i18n";
 
 export default function PlayerStateBox({ playerState, playerKey, color }: {
   playerState: PlayerState; playerKey: string; color: Color }) {
   const actualVps = playerState[`${playerKey}_ACTUAL_VICTORY_POINTS`];
   return (
     <div className={cn("player-state-box foreground", color)}>
+      <div className="player-header">
+        <span className="player-name">{colorLabel(color)}</span>
+        <span className="player-label">の所持カード</span>
+      </div>
       <ResourceCards playerState={playerState} playerKey={playerKey} />
       <div className="scores">
         <div
@@ -36,7 +41,7 @@ export default function PlayerStateBox({ playerState, playerKey, color }: {
           title="勝利点"
         >
           {actualVps}
-          <small>勝利点</small>
+          <small>現在の勝利点</small>
         </div>
       </div>
     </div>
