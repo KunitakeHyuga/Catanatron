@@ -2,6 +2,8 @@
 
 .records-page {
   min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   background: variables.$black;
   color: white;
   padding: 20px;
@@ -10,9 +12,33 @@
   align-items: center;
   gap: 16px;
 
-  .logo {
-    margin: 10px 0;
-    text-align: center;
+  .records-header {
+    width: 100%;
+    max-width: 1600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+
+    .logo {
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    .records-home-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #ffb300, #ff6f00);
+      border: none;
+      border-radius: 6px;
+      color: #1a1300;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+
+      &:hover {
+        background: linear-gradient(135deg, #ffc107, #ff8f00);
+      }
+    }
   }
 
   .records-error {
@@ -22,7 +48,7 @@
 
   .records-layout {
     width: 100%;
-    max-width: 1300px;
+    max-width: 1600px;
     display: flex;
     gap: 16px;
     align-items: flex-start;
@@ -52,6 +78,8 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      max-height: 80vh;
+      padding-right: 4px;
     }
 
     .record-item {
@@ -63,12 +91,15 @@
       color: inherit;
       cursor: pointer;
       transition: border-color 0.2s ease, transform 0.2s ease;
+      overflow: hidden;
 
       .game-id {
         font-size: 0.85rem;
         font-weight: 700;
         margin-bottom: 4px;
-        word-break: break-all;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .game-meta {
@@ -76,6 +107,8 @@
         display: flex;
         justify-content: space-between;
         gap: 8px;
+        white-space: nowrap;
+        overflow: hidden;
       }
 
       &:hover {
@@ -118,6 +151,29 @@
     }
   }
 
+  .records-detail-body {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .records-main {
+    flex: 2;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .records-log-panel {
+    flex: 0 0 420px;
+    max-width: 480px;
+    min-width: 360px;
+    display: flex;
+    flex-direction: column;
+  }
+
   .records-summary {
     display: flex;
     flex-wrap: wrap;
@@ -146,13 +202,16 @@
   }
 
   .records-log {
+    height: 100%;
     .log-entries {
-      max-height: 320px;
+      max-height: 520px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 6px;
       padding-right: 6px;
+      white-space: nowrap;
+      overflow-x: hidden;
     }
     .log-entry {
       font-size: 0.9rem;
@@ -182,6 +241,16 @@
       width: 100%;
       max-width: none;
       max-height: none;
+    }
+
+    .records-detail-body {
+      flex-direction: column;
+    }
+
+    .records-log-panel {
+      flex: 1 1 auto;
+      min-width: 100%;
+      max-width: none;
     }
   }
 }

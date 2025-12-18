@@ -135,7 +135,12 @@ export default function RecordsPage() {
 
   return (
     <main className="records-page">
-      <h1 className="logo">対戦記録</h1>
+      <div className="records-header">
+        <h1 className="logo">対戦記録</h1>
+        <button className="records-home-btn" onClick={() => navigate("/")}>
+          ホームに戻る
+        </button>
+      </div>
       {error && <div className="records-error">{error}</div>}
       <div className="records-layout">
         <aside className="records-list">
@@ -199,38 +204,44 @@ export default function RecordsPage() {
                   <span className="summary-value">{gameState.state_index}</span>
                 </div>
               </section>
-              <section className="records-board">
-                <h2>最終盤面</h2>
-                <BoardSnapshot gameState={gameState} />
-              </section>
-              <section className="records-players">
-                <h2>所持・利用カード</h2>
-                <div className="players-grid">
-                  {gameState.colors.map((color) => (
-                    <PlayerStateBox
-                      key={color}
-                      color={color}
-                      playerState={gameState.player_state}
-                      playerKey={playerKey(gameState, color)}
-                    />
-                  ))}
+              <section className="records-detail-body">
+                <div className="records-main">
+                  <section className="records-board">
+                    <h2>最終盤面</h2>
+                    <BoardSnapshot gameState={gameState} />
+                  </section>
+                  <section className="records-players">
+                    <h2>所持・利用カード</h2>
+                    <div className="players-grid">
+                      {gameState.colors.map((color) => (
+                        <PlayerStateBox
+                          key={color}
+                          color={color}
+                          playerState={gameState.player_state}
+                          playerKey={playerKey(gameState, color)}
+                        />
+                      ))}
+                    </div>
+                  </section>
                 </div>
-              </section>
-              <section className="records-log">
-                <h2>行動ログ</h2>
-                <div className="log-entries">
-                  {gameState.action_records
-                    .slice()
-                    .reverse()
-                    .map((record, index) => (
-                      <div
-                        key={`${record[0][0]}-${index}`}
-                        className={`log-entry ${record[0][0]} foreground`}
-                      >
-                        {humanizeActionRecord(gameState, record)}
-                      </div>
-                    ))}
-                </div>
+                <aside className="records-log-panel">
+                  <section className="records-log">
+                    <h2>行動ログ</h2>
+                    <div className="log-entries">
+                      {gameState.action_records
+                        .slice()
+                        .reverse()
+                        .map((record, index) => (
+                          <div
+                            key={`${record[0][0]}-${index}`}
+                            className={`log-entry ${record[0][0]} foreground`}
+                          >
+                            {humanizeActionRecord(gameState, record)}
+                          </div>
+                        ))}
+                    </div>
+                  </section>
+                </aside>
               </section>
             </>
           )}

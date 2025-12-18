@@ -103,12 +103,11 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
 
   if (!state.gameState) {
     return (
-      <main>
-        <GridLoader
-          className="loader"
-          color="#000000"
-          size={100}
-        />
+      <main className="loading-screen">
+        <div className="loading-card">
+          <GridLoader color="#ffffff" size={80} />
+          <p>ロード中です。少々お待ちください…</p>
+        </div>
       </main>
     );
   }

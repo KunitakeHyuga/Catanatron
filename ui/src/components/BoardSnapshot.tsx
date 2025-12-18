@@ -8,15 +8,23 @@ type BoardSnapshotProps = {
   gameState: GameState;
 };
 
+const MIN_BOARD_WIDTH = 280;
+const MAX_BOARD_WIDTH = 900;
+const BOARD_VERTICAL_OFFSET = 144 + 38 + 40;
+
 export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 900, height: 600 });
+  const [boardWidth, setBoardWidth] = useState(480);
+  const [boardHeight, setBoardHeight] = useState(320);
 
   const computeDimensions = useMemo(
     () =>
       (containerWidth: number) => {
-        const width = Math.min(Math.max(containerWidth - 16, 320), 1000);
-        const height = Math.min(Math.max(width * 0.9, 360), 860);
+        const width = Math.min(
+          Math.max(containerWidth - 16, MIN_BOARD_WIDTH),
+          MAX_BOARD_WIDTH
+        );
+        const height = Math.max(width * 0.62, 240);
         return { width, height };
       },
     []
@@ -28,10 +36,13 @@ export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
     }
     const update = () => {
       const containerWidth = containerRef.current?.clientWidth ?? window.innerWidth;
-      setDimensions(computeDimensions(containerWidth));
+      const { width, height } = computeDimensions(containerWidth);
+      setBoardWidth(width);
+      setBoardHeight(height);
     };
     update();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
     if (observer && containerRef.current) {
       observer.observe(containerRef.current);
     }
@@ -53,21 +64,25 @@ export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
 
   return (
     <div className="board-snapshot" ref={containerRef}>
-      <Board
-        width={dimensions.width}
-        height={dimensions.height}
-        buildOnNodeClick={buildNodeNoop}
-        buildOnEdgeClick={buildEdgeNoop}
-        handleTileClick={() => undefined}
-        nodeActions={{}}
-        edgeActions={{}}
-        replayMode={true}
-        gameState={gameState}
-        isMobile={false}
-        show={true}
-        isMovingRobber={false}
-        fitContainer={true}
-      />
+      <div
+        className="board-wrapper"
+        style={{ width: boardWidth, height: boardHeight }}
+      >
+        <Board
+          width={boardWidth}
+          height={boardHeight + BOARD_VERTICAL_OFFSET}
+          buildOnNodeClick={buildNodeNoop}
+          buildOnEdgeClick={buildEdgeNoop}
+          handleTileClick={() => undefined}
+          nodeActions={{}}
+          edgeActions={{}}
+          replayMode={true}
+          gameState={gameState}
+          isMobile={false}
+          show={true}
+          isMovingRobber={false}
+        />
+      </div>
     </div>
   );
 }
