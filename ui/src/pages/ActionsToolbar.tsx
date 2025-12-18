@@ -27,7 +27,11 @@ import ResourceCards from "../components/ResourceCards";
 import ResourceSelector from "../components/ResourceSelector";
 import { store } from "../store";
 import ACTIONS from "../actions";
-import type { GameAction, ResourceCard } from "../utils/api.types"; // Add GameState to the import, adjust path if needed
+import type {
+  GameAction,
+  ResourceCard,
+  MaritimeTradeAction,
+} from "../utils/api.types"; // Add GameState to the import, adjust path if needed
 import { getHumanColor, playerKey } from "../utils/stateUtils";
 import { postAction } from "../utils/apiClient";
 import { humanizeTradeAction } from "../utils/promptUtils";
@@ -35,6 +39,22 @@ import { humanizeTradeAction } from "../utils/promptUtils";
 import "./ActionsToolbar.scss";
 import { useSnackbar } from "notistack";
 import { dispatchSnackbar } from "../components/Snackbar";
+
+const RESOURCE_ORDER: ResourceCard[] = [
+  "WOOD",
+  "BRICK",
+  "SHEEP",
+  "WHEAT",
+  "ORE",
+];
+const RESOURCE_ORDER_INDEX: Record<ResourceCard, number> =
+  RESOURCE_ORDER.reduce(
+    (acc, resource, index) => {
+      acc[resource] = index;
+      return acc;
+    },
+    {} as Record<ResourceCard, number>
+  );
 
 function PlayButtons() {
   const { gameId } = useParams();
@@ -141,6 +161,11 @@ function PlayButtons() {
   }, [gameId, dispatch, enqueueSnackbar, closeSnackbar, humanColor]);
   const useItems = [
     {
+      label: "騎士カード",
+      disabled: !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
+      onClick: playKnightCard,
+    },
+    {
       label: "独占カード",
       disabled: !playableDevCardTypes.has("PLAY_MONOPOLY"),
       onClick: setIsPlayingMonopoly,
@@ -154,11 +179,6 @@ function PlayButtons() {
       label: "街道建設カード",
       disabled: !playableDevCardTypes.has("PLAY_ROAD_BUILDING"),
       onClick: playRoadBuilding,
-    },
-    {
-      label: "騎士カード",
-      disabled: !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
-      onClick: playKnightCard,
     },
   ];
 
@@ -189,14 +209,9 @@ function PlayButtons() {
   }, [dispatch]);
   const buildItems = [
     {
-      label: "開発カードを購入",
-      disabled: !buildActionTypes.has("BUY_DEVELOPMENT_CARD"),
-      onClick: buyDevCard,
-    },
-    {
-      label: "都市",
-      disabled: !buildActionTypes.has("BUILD_CITY"),
-      onClick: setIsBuildingCity,
+      label: "街道",
+      disabled: !buildActionTypes.has("BUILD_ROAD"),
+      onClick: toggleBuildingRoad,
     },
     {
       label: "開拓地",
@@ -204,9 +219,14 @@ function PlayButtons() {
       onClick: setIsBuildingSettlement,
     },
     {
-      label: "街道",
-      disabled: !buildActionTypes.has("BUILD_ROAD"),
-      onClick: toggleBuildingRoad,
+      label: "都市",
+      disabled: !buildActionTypes.has("BUILD_CITY"),
+      onClick: setIsBuildingCity,
+    },
+    {
+      label: "開発カードを購入",
+      disabled: !buildActionTypes.has("BUY_DEVELOPMENT_CARD"),
+      onClick: buyDevCard,
     },
   ];
 
@@ -214,16 +234,55 @@ function PlayButtons() {
     (action) => action[1] === "MARITIME_TRADE"
   );
   const tradeItems = React.useMemo(() => {
-    const items = tradeActions.map((action) => {
-      const label = humanizeTradeAction(action);
+    const getInputResource = (action: MaritimeTradeAction): ResourceCard => {
+      const input = action[2]
+        .slice(0, 4)
+        .find((resource) => resource !== null) as ResourceCard;
+      return input;
+    };
+    const getOutputResource = (action: MaritimeTradeAction): ResourceCard =>
+      action[2][4] as ResourceCard;
+    const getTradeCost = (action: MaritimeTradeAction): number =>
+      action[2].slice(0, 4).filter((resource) => resource !== null).length;
+
+    const tradeInfos = tradeActions.map((action) => {
+      const maritimeAction = action as MaritimeTradeAction;
+      const inputResource = getInputResource(maritimeAction);
+      const outputResource = getOutputResource(maritimeAction);
+      const cost = getTradeCost(maritimeAction);
       return {
-        label: label,
-        disabled: false,
-        onClick: carryOutAction(action),
+        action: maritimeAction,
+        label: humanizeTradeAction(maritimeAction),
+        inputResource,
+        outputResource,
+        cost,
       };
     });
 
-    return items.sort((a, b) => a.label.localeCompare(b.label));
+    return tradeInfos
+      .sort((a, b) => {
+        const inputDiff =
+          RESOURCE_ORDER_INDEX[a.inputResource] -
+          RESOURCE_ORDER_INDEX[b.inputResource];
+        if (inputDiff !== 0) {
+          return inputDiff;
+        }
+        if (a.cost !== b.cost) {
+          return a.cost - b.cost;
+        }
+        const outputDiff =
+          RESOURCE_ORDER_INDEX[a.outputResource] -
+          RESOURCE_ORDER_INDEX[b.outputResource];
+        if (outputDiff !== 0) {
+          return outputDiff;
+        }
+        return a.label.localeCompare(b.label);
+      })
+      .map(({ action, label }) => ({
+        label,
+        disabled: false,
+        onClick: carryOutAction(action),
+      }));
   }, [tradeActions, carryOutAction]);
 
   const setIsMovingRobber = useCallback(() => {
