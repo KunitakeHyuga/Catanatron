@@ -40,6 +40,8 @@ services:
     ports:
       - 3000:3000
     stdin_open: true
+    environment:
+      - CTRON_API_URL=http://localhost:5001
     volumes:
       - /app/node_modules
       - ./ui:/app
