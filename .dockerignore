@@ -4,3 +4,4 @@ logs
 assets
 venv
 .git
+db-data
