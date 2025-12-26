@@ -32,6 +32,18 @@
       margin-bottom: variables.$sm-gutter;
     }
 
+    .error-banner {
+      background: rgba(255, 71, 87, 0.15);
+      border: 1px solid rgba(255, 111, 97, 0.7);
+      border-radius: 4px;
+      color: #ffe3e0;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+    }
+
     .main-action-button {
       width: 220px;
       max-width: 100%;

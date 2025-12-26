@@ -34,15 +34,29 @@ function getPlayers(gameMode: GameModeType, numPlayers: number) {
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [numPlayers, setNumPlayers] = useState(2);
   const navigate = useNavigate();
 
   const handleCreateGame = async (gameMode: GameModeType) => {
     setLoading(true);
-    const players = getPlayers(gameMode, numPlayers);
-    const gameId = await createGame(players);
-    setLoading(false);
-    navigate("/games/" + gameId);
+    setError(null);
+    try {
+      const players = getPlayers(gameMode, numPlayers);
+      const gameId = await createGame(players);
+      navigate("/games/" + gameId);
+    } catch (err) {
+      console.error("ゲームの作成に失敗しました:", err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === "string") {
+        setError(err);
+      } else {
+        setError("サーバーに接続できませんでした。API サーバーが起動しているか確認してください。");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,6 +66,7 @@ export default function HomePage() {
       <div className="switchable">
         {!loading ? (
           <>
+            {error && <div className="error-banner">{error}</div>}
             <ul>
               <li>手札は常に公開</li>
               <li>資源破棄の選択肢なし</li>

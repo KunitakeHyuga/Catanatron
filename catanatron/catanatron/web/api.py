@@ -18,6 +18,11 @@ from catanatron.game import Game
 from catanatron.players.value import ValueFunctionPlayer
 from catanatron.players.minimax import AlphaBetaPlayer
 from catanatron.web.mcts_analysis import GameAnalyzer
+from catanatron.web.negotiation import (
+    request_negotiation_advice,
+    NegotiationAdviceError,
+    NegotiationAdviceUnavailableError,
+)
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -183,6 +188,39 @@ def mcts_analysis_endpoint(game_id, state_index):
             ),
             status=500,
             mimetype="application/json",
+        )
+
+
+@bp.route(
+    "/games/<string:game_id>/states/<string:state_index>/negotiation-advice",
+    methods=["POST"],
+)
+def negotiation_advice_endpoint(game_id, state_index):
+    parsed_state_index = _parse_state_index(state_index)
+    try:
+        game = get_game_state(game_id, parsed_state_index)
+    except Exception as e:
+        logging.error("Failed to load game state for negotiation advice: %s", e)
+        abort(404, description="Game state not found")
+
+    if game is None:
+        abort(404, description="Game state not found")
+
+    try:
+        payload = request_negotiation_advice(game)
+        return jsonify({"success": True, **payload})
+    except NegotiationAdviceUnavailableError as exp:
+        logging.warning("Negotiation advice unavailable: %s", exp)
+        return (
+            jsonify({"success": False, "error": str(exp)}),
+            503,
+        )
+    except NegotiationAdviceError as exc:
+        logging.error("Negotiation advice failed: %s", exc)
+        logging.error(traceback.format_exc())
+        return (
+            jsonify({"success": False, "error": str(exc)}),
+            500,
         )
 
 

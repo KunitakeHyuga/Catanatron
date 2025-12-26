@@ -138,3 +138,6 @@ dmypy.json
 .pyre/
 
 /db-data
+
+# Node lockfiles (managed outside git)
+package-lock.json

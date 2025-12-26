@@ -49,6 +49,12 @@ export type MCTSProbabilities = {
   [K in Color]: number;
 };
 
+export type NegotiationAdviceResult = {
+  success: boolean;
+  advice?: string;
+  error?: string;
+};
+
 type MCTSSuccessBody = {
   success: true;
   probabilities: MCTSProbabilities;
@@ -89,6 +95,23 @@ export async function getMctsAnalysis(
       data: error.response?.data,
       stack: error.stack,
     });
+    throw error;
+  }
+}
+
+export async function requestNegotiationAdvice(
+  gameId: string,
+  stateIndex: StateIndex = "latest"
+): Promise<NegotiationAdviceResult> {
+  try {
+    const response = await axios.post<NegotiationAdviceResult>(
+      `${API_URL}/api/games/${gameId}/states/${stateIndex}/negotiation-advice`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data as NegotiationAdviceResult;
+    }
     throw error;
   }
 }

@@ -16,6 +16,7 @@ import { type StateIndex, getState, postAction } from "../utils/apiClient";
 import { dispatchSnackbar } from "../components/Snackbar";
 import { getHumanColor } from "../utils/stateUtils";
 import AnalysisBox from "../components/AnalysisBox";
+import NegotiationAdviceBox from "../components/NegotiationAdviceBox";
 import { Button, Divider } from "@mui/material";
 import DiceDisplay from "../components/DiceDisplay";
 import useRollDisplay from "../hooks/useRollDisplay";
@@ -139,7 +140,9 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       )}
       <LeftDrawer />
       <RightDrawer>
-        <AnalysisBox stateIndex={"latest"}/>
+        <AnalysisBox stateIndex={"latest"} />
+        <Divider />
+        <NegotiationAdviceBox stateIndex={"latest"} />
         <Divider />
         <DiceDisplay roll={displayRoll} />
         <Divider />
