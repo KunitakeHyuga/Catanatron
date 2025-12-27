@@ -20,6 +20,10 @@ const RESOURCE_REPLACEMENTS: Array<[RegExp, string]> = [
   [/シープ/g, "羊毛"],
   [/ウィート/g, "小麦"],
   [/オレ/g, "鉱石"],
+  [/RED/g, "赤"],
+  [/BLUE/g, "青"],
+  [/WHITE/g, "白"],
+  [/ORANGE/g, "オレンジ"],
 ];
 
 const DEV_CARD_REPLACEMENTS: Array<[RegExp, string]> = [
