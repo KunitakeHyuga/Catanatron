@@ -417,7 +417,10 @@ export default function PvpRoomPage() {
       {hasSession && roomStatus.started && state.gameState ? (
         <>
           <div className="pvp-room-main">
-            <TurnIndicator gameState={state.gameState} />
+            <TurnIndicator
+              gameState={state.gameState}
+              playerColorOverride={seatColor}
+            />
             <RollingDiceOverlay
               roll={overlayRoll}
               visible={overlayVisible}
