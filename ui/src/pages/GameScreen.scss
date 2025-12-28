@@ -76,6 +76,41 @@ main {
   }
 }
 
+.game-actions-floating {
+  position: fixed;
+  bottom: 120px;
+  right: 24px;
+  left: 24px;
+  max-width: 380px;
+  width: auto;
+  z-index: 1100;
+
+  .actions-toolbar {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .action-button,
+    button {
+      min-width: 140px;
+    }
+  }
+
+  .prompt {
+    max-width: 100%;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+}
+
+@media (min-width: variables.$lg-breakpoint) {
+  .game-actions-floating {
+    right: 360px;
+    left: unset;
+    width: 340px;
+  }
+}
+
 .loading-screen {
   min-height: 100vh;
   display: flex;
