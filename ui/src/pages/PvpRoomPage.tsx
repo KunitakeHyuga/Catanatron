@@ -452,7 +452,7 @@ export default function PvpRoomPage() {
               showResources={false}
             />
           </div>
-          <LeftDrawer playerNames={playerNames} />
+          <LeftDrawer playerNames={playerNames} viewerColor={seatColor} />
           <RightDrawer>
             <div className="drawer-room-info">
               <Typography variant="h6" className="drawer-room-name">

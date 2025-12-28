@@ -244,3 +244,41 @@
     font-weight: bold;
   }
 }
+
+.development-card-table {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fff;
+
+  .dev-table-row {
+    display: grid;
+    grid-template-columns: 70px repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 0.75rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    padding-bottom: 4px;
+  }
+
+  .header {
+    font-weight: 700;
+    opacity: 0.75;
+  }
+
+  .row-label {
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .value {
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .header .value {
+    font-size: 0.7rem;
+  }
+}

@@ -26,14 +26,89 @@ type ResourceCardsProps = {
   playerState: PlayerState;
   playerKey: string;
   wrapDevCards?: boolean;
+  maskDevelopmentCards?: boolean;
+  hideDevelopmentCards?: boolean;
 };
 
 export default function ResourceCards({
   playerState,
   playerKey,
   wrapDevCards = true,
+  maskDevelopmentCards = false,
+  hideDevelopmentCards = false,
 }: ResourceCardsProps) {
   const amount = (card: Card) => playerState[`${playerKey}_${card}_IN_HAND`];
+  const playedAmount = (card: Card) =>
+    playerState[`${playerKey}_PLAYED_${card}`];
+  const totalDevCardsInHand = DEV_CARDS.reduce(
+    (sum, card) => sum + amount(card),
+    0
+  );
+  const renderDevCards = () => {
+    if (maskDevelopmentCards) {
+      return (
+        <>
+          <div
+            className={`dev-cards center-text card ${
+              totalDevCardsInHand ? "has-card" : ""
+            }`}
+            title="未使用の発展カード"
+          >
+            <Paper className="card-surface dev-card-surface">
+              <span className="card-label">未使用</span>
+              <span className="card-count">{totalDevCardsInHand}</span>
+            </Paper>
+          </div>
+          {DEV_CARDS.map((card) => {
+            const played = playedAmount(card);
+            return (
+              <div
+                key={`played-${card}`}
+                className={`dev-cards center-text card ${
+                  played ? "has-card" : ""
+                }`}
+                title={`${cardLabel(card)}（使用済み）`}
+              >
+                <Paper className="card-surface dev-card-surface">
+                  <span className="card-label">{cardLabel(card)}</span>
+                  <span className="card-count">{played}</span>
+                </Paper>
+              </div>
+            );
+          })}
+        </>
+      );
+    }
+    return (
+      <>
+        <div
+          className={`dev-cards center-text card ${
+            totalDevCardsInHand ? "has-card" : ""
+          }`}
+          title="未使用の発展カード"
+        >
+          <Paper className="card-surface dev-card-surface">
+            <span className="card-label">未使用</span>
+            <span className="card-count">{totalDevCardsInHand}</span>
+          </Paper>
+        </div>
+        {DEV_CARDS.map((card) => (
+          <div
+            key={card}
+            className={`dev-cards center-text card ${
+              amount(card) ? "has-card" : ""
+            }`}
+            title={cardLabel(card)}
+          >
+            <Paper className="card-surface dev-card-surface">
+              <span className="card-label">{cardLabel(card)}</span>
+              <span className="card-count">{amount(card)}</span>
+            </Paper>
+          </div>
+        ))}
+      </>
+    );
+  };
   return (
     <div
       className={cn("resource-cards", {
@@ -57,29 +132,12 @@ export default function ResourceCards({
           </Paper>
         </div>
       ))}
-      <div className="separator"></div>
-      {DEV_CARDS.map((card) => (
-        <div
-          key={card}
-          className={`dev-cards center-text card ${amount(card) ? "has-card" : ""}`}
-          title={`${amount(card)}枚の${cardLabel(card)}`}
-        >
-          <Paper className="card-surface dev-card-surface">
-            <span className="card-label">
-              {card === "VICTORY_POINT"
-                ? "勝利点"
-                : card === "KNIGHT"
-                ? "騎士"
-                : card === "MONOPOLY"
-                ? "独占"
-                : card === "YEAR_OF_PLENTY"
-                ? "豊穣"
-                : "街道"}
-            </span>
-            <span className="card-count">{amount(card)}</span>
-          </Paper>
-        </div>
-      ))}
+      {!hideDevelopmentCards && (
+        <>
+          <div className="separator"></div>
+          {renderDevCards()}
+        </>
+      )}
     </div>
   );
 }

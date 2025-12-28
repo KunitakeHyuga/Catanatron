@@ -3,6 +3,7 @@ import cn from "classnames";
 import "./PlayerStateBox.scss";
 import { type Color, type PlayerState } from "../utils/api.types";
 import ResourceCards from "./ResourceCards";
+import DevelopmentCardTable from "./DevelopmentCardTable";
 import { colorLabel } from "../utils/i18n";
 
 type PlayerStateBoxProps = {
@@ -10,6 +11,7 @@ type PlayerStateBoxProps = {
   playerKey: string;
   color: Color;
   playerName?: string | null;
+  showFullDevelopmentCards?: boolean;
 };
 
 export default function PlayerStateBox({
@@ -17,8 +19,9 @@ export default function PlayerStateBox({
   playerKey,
   color,
   playerName,
+  showFullDevelopmentCards = false,
 }: PlayerStateBoxProps) {
-  const actualVps = playerState[`${playerKey}_ACTUAL_VICTORY_POINTS`];
+  const publicVps = playerState[`${playerKey}_VICTORY_POINTS`];
   const label = playerName
     ? `${colorLabel(color)}（${playerName}）`
     : colorLabel(color);
@@ -28,7 +31,16 @@ export default function PlayerStateBox({
         <span className="player-name">{label}</span>
         <span className="player-label">の所持カード</span>
       </div>
-      <ResourceCards playerState={playerState} playerKey={playerKey} />
+      <ResourceCards
+        playerState={playerState}
+        playerKey={playerKey}
+        hideDevelopmentCards
+      />
+      <DevelopmentCardTable
+        playerState={playerState}
+        playerKey={playerKey}
+        hideUnusedDetails={!showFullDevelopmentCards}
+      />
       <div className="scores">
         <div
           className={cn("num-knights center-text", {
@@ -50,12 +62,12 @@ export default function PlayerStateBox({
         </div>
         <div
           className={cn("victory-points center-text", {
-            bold: actualVps >= 10,
+            bold: publicVps >= 10,
           })}
-          title="勝利点"
+          title="公開勝利点"
         >
-          {actualVps}
-          <small>現在の勝利点</small>
+          {publicVps}
+          <small>公開勝利点</small>
         </div>
       </div>
     </div>

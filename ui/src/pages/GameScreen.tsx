@@ -229,7 +229,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
           </Button>
         </div>
       )}
-      <LeftDrawer />
+      <LeftDrawer viewerColor={humanColor ?? null} />
       <RightDrawer>
         <AnalysisBox stateIndex={"latest"} />
         <Divider />

@@ -25,13 +25,13 @@ export function resourceLabel(resource: ResourceCard): string {
 export function developmentCardLabel(card: DevelopmentCard): string {
   switch (card) {
     case "KNIGHT":
-      return "騎士カード";
+      return "騎士";
     case "MONOPOLY":
-      return "独占カード";
+      return "独占";
     case "YEAR_OF_PLENTY":
-      return "豊穣の年カード";
+      return "収穫";
     case "ROAD_BUILDING":
-      return "街道建設カード";
+      return "街道建設";
     default:
       return card;
   }
@@ -40,7 +40,7 @@ export function developmentCardLabel(card: DevelopmentCard): string {
 export function cardLabel(card: Card): string {
   switch (card) {
     case "VICTORY_POINT":
-      return "勝利点カード";
+      return "勝利点";
     case "WOOD":
     case "BRICK":
     case "SHEEP":

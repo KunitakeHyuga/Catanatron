@@ -216,22 +216,22 @@ function PlayButtons({
   ]);
   const useItems = [
     {
-      label: "騎士カード",
+      label: "騎士",
       disabled: disableActions || !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
       onClick: playKnightCard,
     },
     {
-      label: "独占カード",
+      label: "独占",
       disabled: disableActions || !playableDevCardTypes.has("PLAY_MONOPOLY"),
       onClick: setIsPlayingMonopoly,
     },
     {
-      label: "豊穣の年カード",
+      label: "収穫",
       disabled: disableActions || !playableDevCardTypes.has("PLAY_YEAR_OF_PLENTY"),
       onClick: setIsPlayingYearOfPlenty,
     },
     {
-      label: "街道建設カード",
+      label: "街道建設",
       disabled: disableActions || !playableDevCardTypes.has("PLAY_ROAD_BUILDING"),
       onClick: playRoadBuilding,
     },

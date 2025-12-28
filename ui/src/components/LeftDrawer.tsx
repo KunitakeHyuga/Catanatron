@@ -18,11 +18,14 @@ import "./LeftDrawer.scss";
 type DrawerContentProps = {
   gameState: GameState;
   playerNames?: Partial<Record<Color, string | null>>;
+  viewerColor?: Color | null;
 };
 
-function DrawerContent({ gameState, playerNames }: DrawerContentProps) {
+function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentProps) {
   const playerSections = gameState.colors.map((color) => {
     const key = playerKey(gameState, color);
+    const showFullDetails =
+      viewerColor !== null && viewerColor !== undefined && color === viewerColor;
     return (
       <React.Fragment key={color}>
         <PlayerStateBox
@@ -30,6 +33,7 @@ function DrawerContent({ gameState, playerNames }: DrawerContentProps) {
           playerKey={key}
           color={color}
           playerName={playerNames?.[color] ?? null}
+          showFullDevelopmentCards={showFullDetails}
         />
         <Divider />
       </React.Fragment>
@@ -58,10 +62,11 @@ function DrawerContent({ gameState, playerNames }: DrawerContentProps) {
 
 type LeftDrawerProps = {
   playerNames?: Partial<Record<Color, string | null>>;
+  viewerColor?: Color | null;
 };
 
 export default function LeftDrawer(props: LeftDrawerProps = {}) {
-  const { playerNames } = props;
+  const { playerNames, viewerColor = null } = props;
   const { state, dispatch } = useContext(store);
   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -102,6 +107,7 @@ export default function LeftDrawer(props: LeftDrawerProps = {}) {
           <DrawerContent
             gameState={state.gameState as GameState}
             playerNames={playerNames}
+            viewerColor={viewerColor}
           />
         </SwipeableDrawer>
       </Hidden>
@@ -113,6 +119,7 @@ export default function LeftDrawer(props: LeftDrawerProps = {}) {
           <DrawerContent
             gameState={state.gameState as GameState}
             playerNames={playerNames}
+            viewerColor={viewerColor}
           />
         </Drawer>
       </Hidden>
