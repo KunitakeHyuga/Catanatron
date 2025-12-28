@@ -352,8 +352,9 @@ export default function PvpRoomPage() {
     );
   }
 
-  const showRoomPanel = !roomStatus.started;
   const hasSession = Boolean(token);
+  const isHost = roomSeats.find((seat) => seat.is_you)?.color === "RED";
+  const showRoomPanel = !roomStatus.started;
 
   return (
     <main className="pvp-room-page">
@@ -395,14 +396,16 @@ export default function PvpRoomPage() {
               <Button variant="contained" onClick={fetchStatus}>
                 最新情報
               </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleStartGame}
-                disabled={!hasSession || isStarting || !canStartGame}
-              >
-                {isStarting ? "開始中..." : "ゲーム開始"}
-              </Button>
+              {isHost && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleStartGame}
+                  disabled={!hasSession || isStarting || !canStartGame}
+                >
+                  {isStarting ? "開始中..." : "ゲーム開始"}
+                </Button>
+              )}
             </div>
             {waitingMessage && (
               <div className="room-message">{waitingMessage}</div>
