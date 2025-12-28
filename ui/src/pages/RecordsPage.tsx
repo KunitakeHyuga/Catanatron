@@ -15,13 +15,23 @@ import {
   type LocalRecord,
 } from "../utils/localRecords";
 
-type EnrichedRecord = GameRecordSummary & { updated_at: number };
+const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+type EnrichedRecord = GameRecordSummary & { updated_at_ms: number };
 
 function enrichRemote(records: GameRecordSummary[]): EnrichedRecord[] {
   const baseTime = Date.now();
   return records.map((record, index) => ({
     ...record,
-    updated_at: baseTime - index,
+    updated_at_ms: record.updated_at
+      ? Date.parse(record.updated_at)
+      : baseTime - index,
   }));
 }
 
@@ -40,8 +50,19 @@ function mergeRecords(
     }
   });
   return Array.from(mergedMap.values())
-    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
-    .map(({ updated_at, ...rest }) => rest);
+    .map((record) => {
+      const updatedAtMs =
+        record.updated_at_ms ??
+        (record.updated_at
+          ? Date.parse(record.updated_at)
+          : 0);
+      return {
+        ...record,
+        updated_at_ms: updatedAtMs,
+        updated_at: record.updated_at ?? (updatedAtMs ? new Date(updatedAtMs).toISOString() : undefined),
+      };
+    })
+    .sort((a, b) => (b.updated_at_ms || 0) - (a.updated_at_ms || 0));
 }
 
 export default function RecordsPage() {
@@ -123,6 +144,22 @@ export default function RecordsPage() {
     [games, selectedGameId]
   );
 
+  const formatRecordDate = useCallback(
+    (record?: GameRecordSummary | null) => {
+      if (!record) {
+        return "日時不明";
+      }
+      const timestamp = record.updated_at
+        ? Date.parse(record.updated_at)
+        : record.updated_at_ms;
+      if (!timestamp || Number.isNaN(timestamp)) {
+        return "日時不明";
+      }
+      return dateTimeFormatter.format(new Date(timestamp));
+    },
+    []
+  );
+
   const winningLabel = useMemo(() => {
     if (!selectedSummary) {
       return "ゲームを選択してください";
@@ -165,7 +202,10 @@ export default function RecordsPage() {
                   }`}
                   onClick={() => handleSelectGame(game.game_id)}
                 >
-                  <div className="game-id">{game.game_id}</div>
+                  <div className="game-id-row">
+                    <div className="game-id">{game.game_id}</div>
+                    <div className="game-date">{formatRecordDate(game)}</div>
+                  </div>
                   <div className="game-meta">
                     <span>
                       勝者:{" "}
@@ -204,6 +244,12 @@ export default function RecordsPage() {
                 <div>
                   <span className="summary-label">勝者:</span>
                   <span className="summary-value">{winningLabel}</span>
+                </div>
+                <div>
+                  <span className="summary-label">試合日:</span>
+                  <span className="summary-value">
+                    {formatRecordDate(selectedSummary)}
+                  </span>
                 </div>
                 <div>
                   <span className="summary-label">ターン数:</span>

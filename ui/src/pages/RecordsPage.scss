@@ -93,13 +93,26 @@
       transition: border-color 0.2s ease, transform 0.2s ease;
       min-height: 60px;
 
+      .game-id-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
       .game-id {
         font-size: 0.85rem;
         font-weight: 700;
-        margin-bottom: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      .game-date {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        white-space: nowrap;
       }
 
       .game-meta {

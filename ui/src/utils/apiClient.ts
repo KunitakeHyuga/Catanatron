@@ -61,6 +61,8 @@ export type GameRecordSummary = {
   winning_color: Color | null;
   current_color: Color;
   player_colors: Color[];
+  updated_at?: string;
+  updated_at_ms?: number;
 };
 
 export async function listGames(): Promise<GameRecordSummary[]> {
