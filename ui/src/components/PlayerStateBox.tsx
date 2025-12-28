@@ -34,10 +34,10 @@ export default function PlayerStateBox({
           className={cn("num-knights center-text", {
             bold: playerState[`${playerKey}_HAS_ARMY`],
           })}
-          title="使用済みの騎士カード"
+          title="最大騎士力"
         >
           <span>{playerState[`${playerKey}_PLAYED_KNIGHT`]}</span>
-          <small>使用済み騎士</small>
+          <small>最大騎士力</small>
         </div>
         <div
           className={cn("num-roads center-text", {
