@@ -416,36 +416,34 @@ export default function PvpRoomPage() {
 
       {hasSession && roomStatus.started && state.gameState ? (
         <>
-          <div className="pvp-room-main">
-            <TurnIndicator
-              gameState={state.gameState}
-              playerColorOverride={seatColor}
-            />
-            <RollingDiceOverlay
-              roll={overlayRoll}
-              visible={overlayVisible}
-              currentTurnLabel={turnLabel}
-              currentColorClass={turnPillClass}
-              onComplete={finalizeOverlay}
-            />
-            <ZoomableBoard
+          <TurnIndicator
+            gameState={state.gameState}
+            playerColorOverride={seatColor}
+          />
+          <RollingDiceOverlay
+            roll={overlayRoll}
+            visible={overlayVisible}
+            currentTurnLabel={turnLabel}
+            currentColorClass={turnPillClass}
+            onComplete={finalizeOverlay}
+          />
+          <ZoomableBoard
+            replayMode={false}
+            gameIdOverride={roomStatus.game_id ?? undefined}
+            actionExecutor={submitAction}
+            actionsDisabled={!isMyTurn}
+            playerColorOverride={seatColor}
+          />
+          <div className="pvp-actions-floating">
+            <ActionsToolbar
+              isBotThinking={false}
               replayMode={false}
               gameIdOverride={roomStatus.game_id ?? undefined}
               actionExecutor={submitAction}
               actionsDisabled={!isMyTurn}
               playerColorOverride={seatColor}
+              showResources={false}
             />
-            <div className="pvp-actions-floating">
-              <ActionsToolbar
-                isBotThinking={false}
-                replayMode={false}
-                gameIdOverride={roomStatus.game_id ?? undefined}
-                actionExecutor={submitAction}
-                actionsDisabled={!isMyTurn}
-                playerColorOverride={seatColor}
-                showResources={false}
-              />
-            </div>
           </div>
           <LeftDrawer playerNames={playerNames} />
           <RightDrawer>
