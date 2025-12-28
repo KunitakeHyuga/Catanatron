@@ -22,6 +22,40 @@ type DrawerContentProps = {
 };
 
 function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentProps) {
+  const playerState = gameState.player_state;
+  const playerKeysByColor = new Map<Color, string>();
+  gameState.colors.forEach((color) => {
+    playerKeysByColor.set(color, playerKey(gameState, color));
+  });
+
+  const armyLeaders = new Set<Color>(
+    gameState.colors.filter((color) => {
+      const key = playerKeysByColor.get(color)!;
+      return Boolean(playerState[`${key}_HAS_ARMY`]);
+    })
+  );
+  const roadLeaders = new Set<Color>(
+    gameState.colors.filter((color) => {
+      const key = playerKeysByColor.get(color)!;
+      return Boolean(playerState[`${key}_HAS_ROAD`]);
+    })
+  );
+  const publicVpsByColor = new Map<Color, number>();
+  let maxPublicVps = -Infinity;
+  gameState.colors.forEach((color) => {
+    const key = playerKeysByColor.get(color)!;
+    const vps = playerState[`${key}_VICTORY_POINTS`];
+    publicVpsByColor.set(color, vps);
+    if (vps > maxPublicVps) {
+      maxPublicVps = vps;
+    }
+  });
+  const victoryLeaders = new Set<Color>(
+    gameState.colors.filter(
+      (color) => publicVpsByColor.get(color)! === maxPublicVps
+    )
+  );
+
   const playerSections = gameState.colors.map((color) => {
     const key = playerKey(gameState, color);
     const showFullDetails =
@@ -34,6 +68,9 @@ function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentPro
           color={color}
           playerName={playerNames?.[color] ?? null}
           showFullDevelopmentCards={showFullDetails}
+          isArmyLeader={armyLeaders.has(color)}
+          isRoadLeader={roadLeaders.has(color)}
+          isVictoryLeader={victoryLeaders.has(color)}
         />
         <Divider />
       </React.Fragment>

@@ -206,6 +206,23 @@
     color: rgba(255, 255, 255, 0.9);
     .player-name {
       font-size: 1.05rem;
+
+      .player-color-text {
+        font-weight: 700;
+        margin-right: 2px;
+      }
+      .player-color-red {
+        color: variables.$red;
+      }
+      .player-color-blue {
+        color: variables.$blue;
+      }
+      .player-color-orange {
+        color: variables.$orange;
+      }
+      .player-color-white {
+        color: variables.$white;
+      }
     }
   }
 
@@ -231,6 +248,29 @@
       width: 58px;
       height: 50px;
       padding: 0 4px;
+    }
+    > div {
+      color: #fff;
+      border: none;
+      background: transparent;
+    }
+    small {
+      color: inherit;
+    }
+    .leader {
+      font-weight: 700;
+    }
+    .leader-red {
+      color: variables.$red;
+    }
+    .leader-blue {
+      color: variables.$blue;
+    }
+    .leader-orange {
+      color: variables.$orange;
+    }
+    .leader-white {
+      color: variables.$white;
     }
   }
 

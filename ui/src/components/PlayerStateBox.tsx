@@ -12,6 +12,9 @@ type PlayerStateBoxProps = {
   color: Color;
   playerName?: string | null;
   showFullDevelopmentCards?: boolean;
+  isArmyLeader?: boolean;
+  isRoadLeader?: boolean;
+  isVictoryLeader?: boolean;
 };
 
 export default function PlayerStateBox({
@@ -20,15 +23,22 @@ export default function PlayerStateBox({
   color,
   playerName,
   showFullDevelopmentCards = false,
+  isArmyLeader = false,
+  isRoadLeader = false,
+  isVictoryLeader = false,
 }: PlayerStateBoxProps) {
   const publicVps = playerState[`${playerKey}_VICTORY_POINTS`];
-  const label = playerName
-    ? `${colorLabel(color)}（${playerName}）`
-    : colorLabel(color);
+  const colorText = colorLabel(color);
+  const nameText = playerName ? `（${playerName}）` : "";
   return (
     <div className={cn("player-state-box foreground", color)}>
       <div className="player-header">
-        <span className="player-name">{label}</span>
+        <span className="player-name">
+          <span className={`player-color-text player-color-${color.toLowerCase()}`}>
+            {colorText}
+          </span>
+          {nameText}
+        </span>
         <span className="player-label">の所持カード</span>
       </div>
       <ResourceCards
@@ -45,6 +55,8 @@ export default function PlayerStateBox({
         <div
           className={cn("num-knights center-text", {
             bold: playerState[`${playerKey}_HAS_ARMY`],
+            leader: isArmyLeader,
+            [`leader-${color.toLowerCase()}`]: isArmyLeader,
           })}
           title="最大騎士力"
         >
@@ -54,6 +66,8 @@ export default function PlayerStateBox({
         <div
           className={cn("num-roads center-text", {
             bold: playerState[`${playerKey}_HAS_ROAD`],
+            leader: isRoadLeader,
+            [`leader-${color.toLowerCase()}`]: isRoadLeader,
           })}
           title="最長交易路"
         >
@@ -63,6 +77,8 @@ export default function PlayerStateBox({
         <div
           className={cn("victory-points center-text", {
             bold: publicVps >= 10,
+            leader: isVictoryLeader,
+            [`leader-${color.toLowerCase()}`]: isVictoryLeader,
           })}
           title="公開勝利点"
         >
