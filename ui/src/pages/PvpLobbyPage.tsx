@@ -75,6 +75,9 @@ export default function PvpLobbyPage() {
           </Typography>
         </div>
         <div className="lobby-actions">
+          <Button variant="outlined" onClick={() => navigate("/")}>
+            ホームに戻る
+          </Button>
           <Button
             startIcon={<RefreshIcon />}
             variant="outlined"
