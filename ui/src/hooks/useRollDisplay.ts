@@ -42,8 +42,8 @@ export default function useRollDisplay(gameState: GameState | null) {
     }
 
     if (!displayRollKey && !overlayKey) {
-      setDisplayRoll(latest.roll);
-      setDisplayRollKey(latest.key);
+      setOverlayRoll(latest.roll);
+      setOverlayKey(latest.key);
       return;
     }
 
