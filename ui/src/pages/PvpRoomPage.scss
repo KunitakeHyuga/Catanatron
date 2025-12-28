@@ -45,8 +45,84 @@
   background: radial-gradient(circle at top, #1b2f5b 0%, #090f1f 45%, #05060f 100%);
 }
 
+.pvp-room-page.game-active {
+  padding: 0;
+  gap: 0;
+  background: variables.$black;
+}
+
+.pvp-live-game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: #fff;
+  background: variables.$black;
+  position: relative;
+
+  .board-container,
+  .loader {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.pvp-live-game .board-container {
+  .react-transform-wrapper {
+    height: 100%;
+    width: 100%;
+  }
+  .react-transform-component {
+    height: 100%;
+    width: 100%;
+
+    .react-transform-element {
+      height: 100%;
+      width: 100%;
+    }
+  }
+
+  .board {
+    position: relative;
+    opacity: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .board.show {
+    opacity: 1;
+  }
+}
+
+.pvp-live-game .pvp-actions-floating {
+  bottom: 120px;
+}
+
+@media (min-width: variables.$md-breakpoint) {
+  .pvp-live-game {
+    padding-left: 340px;
+
+    .board-container {
+      margin-right: 0;
+    }
+  }
+}
+
+@media (min-width: variables.$lg-breakpoint) {
+  .pvp-live-game {
+    padding-left: 0;
+
+    .board-container {
+      margin-left: 140px;
+    }
+  }
+}
+
 .join-dialog-paper {
-  min-height: 210px;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
 

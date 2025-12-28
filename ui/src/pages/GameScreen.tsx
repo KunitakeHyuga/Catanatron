@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import { GridLoader } from "react-spinners";
@@ -25,14 +25,18 @@ import { colorLabel } from "../utils/i18n";
 import TurnIndicator from "../components/TurnIndicator";
 import BuildCostGuide from "../components/BuildCostGuide";
 import { upsertLocalRecord } from "../utils/localRecords";
+import type { GameAction, GameState } from "../utils/api.types";
 
-const ROBOT_THINKING_TIME = 300;
+const ROBOT_THINKING_TIME = 3000;
+const BOT_ACTION_DELAY = 2500;
 
 function GameScreen({ replayMode }: { replayMode: boolean }) {
   const { gameId, stateIndex } = useParams();
   const { state, dispatch } = useContext(store);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [botActionInFlight, setBotActionInFlight] = useState(false);
+  const botDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load game state
   useEffect(() => {
@@ -46,31 +50,97 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     })();
   }, [gameId, stateIndex, dispatch]);
 
+  // Track unmount to avoid state updates on unmounted component
+  const isUnmountedRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      isUnmountedRef.current = true;
+      if (botDelayTimeoutRef.current) {
+        clearTimeout(botDelayTimeoutRef.current);
+        botDelayTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Maybe kick off next query?
   useEffect(() => {
     if (!state.gameState || replayMode || !gameId) {
       return;
     }
-    if (
+    const botShouldAct =
       state.gameState.bot_colors.includes(state.gameState.current_color) &&
-      !state.gameState.winning_color
-    ) {
-      // Make bot click next action.
-      (async () => {
-        setIsBotThinking(true);
-        const start = new Date();
-        const gameState = await postAction(gameId);
-        const requestTime = new Date().valueOf() - start.valueOf();
-        setTimeout(() => {
-          // simulate thinking
-          setIsBotThinking(false);
-          dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-          if (getHumanColor(gameState)) {
-            dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-          }
-        }, ROBOT_THINKING_TIME - requestTime);
-      })();
+      !state.gameState.winning_color &&
+      !(state.gameState.is_initial_build_phase && selectedGameId === null);
+    if (!botShouldAct || botActionInFlight) {
+      return;
     }
+    setBotActionInFlight(true);
+    const showThinking = !state.gameState.is_initial_build_phase;
+    if (showThinking) {
+      setIsBotThinking(true);
+    }
+
+    const schedule = (
+      ms: number,
+      cb: () => void,
+      { skipIfInitialPlacement = false }: { skipIfInitialPlacement?: boolean } = {}
+    ) => {
+      if (
+        (skipIfInitialPlacement && state.gameState?.is_initial_build_phase) ||
+        ms <= 0
+      ) {
+        cb();
+        return;
+      }
+      botDelayTimeoutRef.current = setTimeout(() => {
+        botDelayTimeoutRef.current = null;
+        cb();
+      }, ms);
+    };
+
+    const finishAction = () => {
+      if (!isUnmountedRef.current) {
+        if (showThinking) {
+          setIsBotThinking(false);
+        }
+        setBotActionInFlight(false);
+      }
+    };
+
+    const applyResultWithPause = (gameState: GameState) => {
+      if (isUnmountedRef.current) {
+        finishAction();
+        return;
+      }
+      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+      if (getHumanColor(gameState)) {
+        dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+      }
+      schedule(BOT_ACTION_DELAY, finishAction, {
+        skipIfInitialPlacement: true,
+      });
+    };
+
+    const executeBotAction = async () => {
+      try {
+        const start = Date.now();
+        const gameState = await postAction(gameId);
+        if (isUnmountedRef.current) {
+          finishAction();
+          return;
+        }
+        const elapsed = Date.now() - start;
+        const delay = Math.max(0, ROBOT_THINKING_TIME - elapsed);
+        schedule(delay, () => applyResultWithPause(gameState), {
+          skipIfInitialPlacement: true,
+        });
+      } catch (error) {
+        console.error("Failed to process bot action", error);
+        finishAction();
+      }
+    };
+
+    executeBotAction();
   }, [
     gameId,
     replayMode,
@@ -78,6 +148,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     dispatch,
     enqueueSnackbar,
     closeSnackbar,
+    botActionInFlight,
   ]);
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
@@ -89,6 +160,16 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     }
     upsertLocalRecord(gameId, state.gameState);
   }, [gameId, state.gameState, replayMode]);
+
+  const executePlayerAction = useCallback(
+    async (action?: GameAction) => {
+      if (!gameId) {
+        throw new Error("gameId が必要です");
+      }
+      return postAction(gameId, action);
+    },
+    [gameId]
+  );
 
   const humanColor = state.gameState ? getHumanColor(state.gameState) : null;
   const turnLabel = state.gameState
@@ -124,8 +205,18 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
         currentColorClass={turnPillClass}
         onComplete={finalizeOverlay}
       />
-      <ZoomableBoard replayMode={replayMode} />
-      <ActionsToolbar isBotThinking={isBotThinking} replayMode={replayMode} />
+      <ZoomableBoard
+        replayMode={replayMode}
+        actionExecutor={executePlayerAction}
+      />
+      <div className="game-actions-floating">
+        <ActionsToolbar
+          isBotThinking={isBotThinking}
+          replayMode={replayMode}
+          actionExecutor={executePlayerAction}
+          showResources={false}
+        />
+      </div>
       {state.gameState.winning_color && (
         <div className="game-end-actions">
           <Button

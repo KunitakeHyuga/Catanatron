@@ -351,6 +351,7 @@ function PlayButtons({
     dispatch({ type: ACTIONS.SET_IS_MOVING_ROBBER });
   }, [dispatch]);
   const rollAction = carryOutAction([humanColor, "ROLL", null]);
+  const discardAction = carryOutAction([humanColor, "DISCARD", null]);
   const proceedAction = carryOutAction();
   const endTurnAction = carryOutAction([humanColor, "END_TURN", null]);
   return (
@@ -392,7 +393,7 @@ function PlayButtons({
         startIcon={<NavigateNextIcon />}
         onClick={
           isDiscard
-            ? proceedAction
+            ? discardAction
             : isMoveRobber
             ? setIsMovingRobber
             : isPlayingYearOfPlenty || isPlayingMonopoly

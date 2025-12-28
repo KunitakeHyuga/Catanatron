@@ -54,10 +54,16 @@ const StateProvider = ({ children }: { children: React.ReactNode }) => {
           const prevGameState = state.gameState;
           const prevStateIndex = prevGameState?.state_index ?? null;
           const nextStateIndex = nextGameState?.state_index ?? null;
+          const prevActionCount = prevGameState?.action_records.length ?? null;
+          const nextActionCount = nextGameState?.action_records.length ?? null;
+          const prevTurnCount = prevGameState?.num_turns ?? null;
+          const nextTurnCount = nextGameState?.num_turns ?? null;
           const hasStateChanged =
             prevGameState === null ||
             nextGameState === null ||
-            prevStateIndex !== nextStateIndex;
+            prevStateIndex !== nextStateIndex ||
+            prevActionCount !== nextActionCount ||
+            prevTurnCount !== nextTurnCount;
 
           if (!hasStateChanged) {
             return { ...state, gameState: nextGameState };

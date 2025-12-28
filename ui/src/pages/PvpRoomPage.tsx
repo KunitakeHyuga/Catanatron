@@ -360,9 +360,11 @@ export default function PvpRoomPage() {
   const hasSession = Boolean(token);
   const isHost = roomSeats.find((seat) => seat.is_you)?.color === "RED";
   const showRoomPanel = !roomStatus.started;
+  const showLiveGame =
+    hasSession && roomStatus.started && Boolean(state.gameState);
 
   return (
-    <main className="pvp-room-page">
+    <main className={`pvp-room-page ${showLiveGame ? "game-active" : ""}`}>
       {joinDialog}
 
       {showRoomPanel && (
@@ -419,8 +421,8 @@ export default function PvpRoomPage() {
         </section>
       )}
 
-      {hasSession && roomStatus.started && state.gameState ? (
-        <>
+      {showLiveGame ? (
+        <div className="pvp-live-game">
           <TurnIndicator
             gameState={state.gameState}
             playerColorOverride={seatColor}
@@ -473,11 +475,13 @@ export default function PvpRoomPage() {
               退出
             </Button>
           </RightDrawer>
-        </>
+        </div>
       ) : !hasSession ? (
         <div className="waiting-message">
           参加していません。参加ボタンから入室してください。
         </div>
+      ) : roomStatus.started ? (
+        <div className="waiting-message">ゲーム情報を読み込み中です…</div>
       ) : (
         <div className="waiting-message">
           ホストがゲームを開始するまでお待ちください。
