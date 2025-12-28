@@ -1,26 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GameState } from "../utils/api.types";
+import type { Color, GameState } from "../utils/api.types";
 
 export type RollValue = [number, number];
 
 type RollInfo = {
   roll: RollValue | null;
   key: string | null;
+  roller: Color | null;
 };
 
 function extractLatestRoll(gameState: GameState | null): RollInfo {
   if (!gameState) {
-    return { roll: null, key: null };
+    return { roll: null, key: null, roller: null };
   }
   for (let i = gameState.action_records.length - 1; i >= 0; i--) {
     const record = gameState.action_records[i];
     if (record[0][1] === "ROLL") {
       const roll = record[1] as RollValue;
       const key = `${roll[0]}-${roll[1]}-${i}`;
-      return { roll, key };
+      const roller = record[0][0] as Color;
+      return { roll, key, roller };
     }
   }
-  return { roll: null, key: null };
+  return { roll: null, key: null, roller: null };
 }
 
 export default function useRollDisplay(gameState: GameState | null) {
@@ -51,7 +53,10 @@ export default function useRollDisplay(gameState: GameState | null) {
       return;
     }
 
-    const shouldAnimateRoll = Boolean(latest.roll);
+    const shouldAnimateRoll =
+      Boolean(latest.roll) &&
+      gameState &&
+      latest.roller === gameState.current_color;
 
     if (shouldAnimateRoll) {
       setOverlayRoll(latest.roll);
