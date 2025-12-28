@@ -30,6 +30,11 @@ $btn-height: 60px;
     width: 100px;
     height: $btn-height;
   }
+  .action-button {
+    min-height: $btn-height;
+    height: $btn-height;
+    width: 140px;
+  }
   .action-button.Mui-disabled {
     background-color: transparent;
     color: rgba(255, 255, 255, 0.5);
@@ -44,10 +49,12 @@ $btn-height: 60px;
 
   .action-popover {
     z-index: 1;
-
-    overflow: auto;
-    max-height: calc(100% - #{$btn-height});
-    margin-bottom: 10px;
+    .MuiPaper-root {
+      max-height: none;
+    }
+    .MuiMenuItem-root {
+      white-space: normal;
+    }
   }
 
   .MuiButton-label {

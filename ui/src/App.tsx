@@ -11,6 +11,8 @@ import { StateProvider } from "./store";
 import "./App.scss";
 import ReplayScreen from "./pages/ReplayScreen";
 import RecordsPage from "./pages/RecordsPage";
+import PvpLobbyPage from "./pages/PvpLobbyPage";
+import PvpRoomPage from "./pages/PvpRoomPage";
 
 const theme = createTheme({
   palette: {
@@ -48,6 +50,8 @@ function App() {
               <Route path="/records" element={<RecordsPage />} />
               <Route path="/records/:gameId" element={<RecordsPage />} />
               <Route path="/" element={<HomePage />} />
+              <Route path="/pvp" element={<PvpLobbyPage />} />
+              <Route path="/pvp/rooms/:roomId" element={<PvpRoomPage />} />
             </Routes>
           </Router>
         </SnackbarProvider>

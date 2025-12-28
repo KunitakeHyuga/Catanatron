@@ -18,6 +18,24 @@ from catanatron.game import Game
 from catanatron.players.value import ValueFunctionPlayer
 from catanatron.players.minimax import AlphaBetaPlayer
 from catanatron.web.mcts_analysis import GameAnalyzer
+from catanatron.web.negotiation import (
+    request_negotiation_advice,
+    NegotiationAdviceError,
+    NegotiationAdviceUnavailableError,
+)
+from catanatron.web.pvp_room import (
+    PVP_TOKEN_HEADER,
+    create_room,
+    get_room_status,
+    get_room_game,
+    join_room,
+    leave_room,
+    list_rooms,
+    peek_session,
+    require_session,
+    start_room,
+    submit_action,
+)
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -184,6 +202,105 @@ def mcts_analysis_endpoint(game_id, state_index):
             status=500,
             mimetype="application/json",
         )
+
+
+@bp.route(
+    "/games/<string:game_id>/states/<string:state_index>/negotiation-advice",
+    methods=["POST"],
+)
+def negotiation_advice_endpoint(game_id, state_index):
+    parsed_state_index = _parse_state_index(state_index)
+    try:
+        game = get_game_state(game_id, parsed_state_index)
+    except Exception as e:
+        logging.error("Failed to load game state for negotiation advice: %s", e)
+        abort(404, description="Game state not found")
+
+    if game is None:
+        abort(404, description="Game state not found")
+
+    try:
+        payload = request_negotiation_advice(game)
+        return jsonify({"success": True, **payload})
+    except NegotiationAdviceUnavailableError as exp:
+        logging.warning("Negotiation advice unavailable: %s", exp)
+        return (
+            jsonify({"success": False, "error": str(exp)}),
+            503,
+        )
+    except NegotiationAdviceError as exc:
+        logging.error("Negotiation advice failed: %s", exc)
+        logging.error(traceback.format_exc())
+        return (
+            jsonify({"success": False, "error": str(exc)}),
+            500,
+        )
+
+
+@bp.route("/pvp/rooms", methods=["GET"])
+def list_pvp_rooms_endpoint():
+    rooms = list_rooms()
+    return jsonify({"rooms": rooms})
+
+
+@bp.route("/pvp/rooms", methods=["POST"])
+def create_pvp_room_endpoint():
+    room_name = None
+    if request.is_json and request.json is not None:
+        room_name = request.json.get("room_name")
+    room = create_room(room_name)
+    return jsonify(room), 201
+
+
+@bp.route("/pvp/rooms/<string:room_id>/status", methods=["GET"])
+def get_pvp_room_status(room_id):
+    token = request.headers.get(PVP_TOKEN_HEADER)
+    status = get_room_status(room_id, token)
+    return jsonify(status)
+
+
+@bp.route("/pvp/rooms/<string:room_id>/join", methods=["POST"])
+def join_pvp_room(room_id):
+    if not request.is_json or request.json is None or "user_name" not in request.json:
+        abort(400, description="user_name を指定してください。")
+    payload = join_room(room_id, request.json["user_name"])
+    return jsonify(payload)
+
+
+@bp.route("/pvp/rooms/<string:room_id>/leave", methods=["POST"])
+def leave_pvp_room(room_id):
+    session = require_session(request.headers.get(PVP_TOKEN_HEADER), room_id)
+    room = leave_room(session)
+    return jsonify({"room": room})
+
+
+@bp.route("/pvp/rooms/<string:room_id>/start", methods=["POST"])
+def start_pvp_room(room_id):
+    session = require_session(request.headers.get(PVP_TOKEN_HEADER), room_id)
+    result = start_room(session)
+    return jsonify(result)
+
+
+@bp.route("/pvp/rooms/<string:room_id>/game", methods=["GET"])
+def get_pvp_room_game(room_id):
+    session = require_session(request.headers.get(PVP_TOKEN_HEADER), room_id)
+    requested_state = request.args.get("state", "latest")
+    parsed_state_index = _parse_state_index(requested_state)
+    game = get_room_game(session, parsed_state_index)
+    payload = json.dumps(game, cls=GameEncoder)
+    return Response(response=payload, status=200, mimetype="application/json")
+
+
+@bp.route("/pvp/rooms/<string:room_id>/action", methods=["POST"])
+def post_pvp_action(room_id):
+    session = require_session(request.headers.get(PVP_TOKEN_HEADER), room_id)
+    if not request.is_json or request.json is None:
+        abort(400, description="JSON body が必要です。")
+    action_payload = request.json.get("action")
+    expected_state_index = request.json.get("expected_state_index")
+    game = submit_action(session, action_payload, expected_state_index)
+    payload = json.dumps(game, cls=GameEncoder)
+    return Response(response=payload, status=200, mimetype="application/json")
 
 
 def _parse_state_index(state_index_str: str):

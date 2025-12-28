@@ -25,6 +25,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://catanatron:victorypoint@db:5432/catanatron_db
       - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - 5001:5001
     stdin_open: true
@@ -39,6 +40,8 @@ services:
     ports:
       - 3000:3000
     stdin_open: true
+    environment:
+      - CTRON_API_URL=http://localhost:5001
     volumes:
       - /app/node_modules
       - ./ui:/app

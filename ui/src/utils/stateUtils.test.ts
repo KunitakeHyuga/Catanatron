@@ -19,6 +19,15 @@ describe("isPlayersTurn", () => {
     };
     expect(isPlayersTurn(gameState as GameState)).toBeFalsy();
   });
+  test("respects player color override", () => {
+    const gameState: Partial<GameState> = {
+      bot_colors: [],
+      colors: ["BLUE", "RED"],
+      current_color: "RED",
+    };
+    expect(isPlayersTurn(gameState as GameState, "BLUE")).toBeFalsy();
+    expect(isPlayersTurn(gameState as GameState, "RED")).toBeTruthy();
+  });
 });
 
 describe("playerKey", () => {

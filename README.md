@@ -78,6 +78,20 @@ Docker で Web UI を起動し、Catanatron 対戦や観戦ができます。
     ```
 3. ブラウザで http://localhost:3000 を開きます。
 
+### ChatGPT 交渉アドバイス
+
+Web UI 右側のドロワーに「交渉アドバイス」ボタンが追加されています。現在の盤面と行動ログを ChatGPT API に送り、トレードや交渉のヒントを取得します。利用するには API サーバーを起動する環境に以下の環境変数を設定してください:
+
+| 変数 | 説明 |
+| --- | --- |
+| `OPENAI_API_KEY` | 必須。ChatGPT（OpenAI API）のキー。 |
+| `NEGOTIATION_ADVICE_MODEL` | 任意。利用するモデル名（未設定時は `OPENAI_MODEL` → `gpt-4o-mini` の順に利用）。 |
+| `NEGOTIATION_ADVICE_TEMPERATURE` | 任意。応答の温度。デフォルト `0.4`。 |
+| `NEGOTIATION_LOG_LIMIT` | 任意。プロンプトに含める直近行動ログの件数（デフォルト 32）。 |
+
+キーが未設定の場合、このボタンはエラーメッセージを返します。
+また、OpenAI 側で利用上限に達している場合は 429 エラー（insufficient_quota）になるため、課金状況や使用量を確認し、必要に応じて新しいキーを設定してください。
+
 ## Python ライブラリ
 
 `catanatron` パッケージを直接利用して、カタンのコアロジックを Python から呼び出すこともできます。
@@ -144,4 +158,3 @@ coverage run --source=catanatron -m pytest tests/ && coverage report
 
 ## 付録
 プロジェクトの背景はこちら: [5 Ways NOT to Build a Catan AI](https://medium.com/@bcollazo2010/5-ways-not-to-build-a-catan-ai-e01bc491af17)（英語）。
-

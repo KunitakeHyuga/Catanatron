@@ -1,5 +1,5 @@
 import { isPlayersTurn } from "../utils/stateUtils";
-import { type GameState } from "../utils/api.types";
+import { type Color, type GameState } from "../utils/api.types";
 
 import "./Prompt.scss";
 import { colorLabel } from "../utils/i18n";
@@ -33,16 +33,18 @@ function humanizePrompt(currentPrompt: string): string {
 export default function Prompt({
   gameState,
   isBotThinking,
+  playerColor,
 }: {
   gameState: GameState;
   isBotThinking: boolean;
+  playerColor?: Color | null;
 }) {
   let prompt = "";
   if (isBotThinking) {
     prompt = "ボットが思考中です…";
   } else if (gameState.winning_color) {
     prompt = `ゲーム終了。${colorLabel(gameState.winning_color)}の勝ちです！`;
-  } else if (isPlayersTurn(gameState)) {
+  } else if (isPlayersTurn(gameState, playerColor ?? undefined)) {
     prompt = humanizePrompt(gameState.current_prompt);
   }
   return <div className="prompt">{prompt}</div>;

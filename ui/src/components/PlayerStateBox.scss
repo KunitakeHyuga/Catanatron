@@ -206,6 +206,23 @@
     color: rgba(255, 255, 255, 0.9);
     .player-name {
       font-size: 1.05rem;
+
+      .player-color-text {
+        font-weight: 700;
+        margin-right: 2px;
+      }
+      .player-color-red {
+        color: variables.$red;
+      }
+      .player-color-blue {
+        color: variables.$blue;
+      }
+      .player-color-orange {
+        color: variables.$orange;
+      }
+      .player-color-white {
+        color: variables.$white;
+      }
     }
   }
 
@@ -232,6 +249,29 @@
       height: 50px;
       padding: 0 4px;
     }
+    > div {
+      color: #fff;
+      border: none;
+      background: transparent;
+    }
+    small {
+      color: inherit;
+    }
+    .leader {
+      font-weight: 700;
+    }
+    .leader-red {
+      color: variables.$red;
+    }
+    .leader-blue {
+      color: variables.$blue;
+    }
+    .leader-orange {
+      color: variables.$orange;
+    }
+    .leader-white {
+      color: variables.$white;
+    }
   }
 
 .num-knights,
@@ -242,5 +282,43 @@
 
   .bold {
     font-weight: bold;
+  }
+}
+
+.development-card-table {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fff;
+
+  .dev-table-row {
+    display: grid;
+    grid-template-columns: 70px repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 0.75rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    padding-bottom: 4px;
+  }
+
+  .header {
+    font-weight: 700;
+    opacity: 0.75;
+  }
+
+  .row-label {
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .value {
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .header .value {
+    font-size: 0.7rem;
   }
 }

@@ -10,20 +10,67 @@ import { humanizeActionRecord } from "../utils/promptUtils";
 import { store } from "../store";
 import ACTIONS from "../actions";
 import { playerKey } from "../utils/stateUtils";
-import { type GameState } from "../utils/api.types";
+import { type Color, type GameState } from "../utils/api.types";
 import { isTabOrShift, type InteractionEvent } from "../utils/events";
 
 import "./LeftDrawer.scss";
 
-function DrawerContent({ gameState }: { gameState: GameState }) {
+type DrawerContentProps = {
+  gameState: GameState;
+  playerNames?: Partial<Record<Color, string | null>>;
+  viewerColor?: Color | null;
+};
+
+function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentProps) {
+  const playerState = gameState.player_state;
+  const playerKeysByColor = new Map<Color, string>();
+  gameState.colors.forEach((color) => {
+    playerKeysByColor.set(color, playerKey(gameState, color));
+  });
+
+  const armyLeaders = new Set<Color>(
+    gameState.colors.filter((color) => {
+      const key = playerKeysByColor.get(color)!;
+      return Boolean(playerState[`${key}_HAS_ARMY`]);
+    })
+  );
+  const roadLeaders = new Set<Color>(
+    gameState.colors.filter((color) => {
+      const key = playerKeysByColor.get(color)!;
+      return Boolean(playerState[`${key}_HAS_ROAD`]);
+    })
+  );
+  const publicVpsByColor = new Map<Color, number>();
+  let maxPublicVps = -Infinity;
+  gameState.colors.forEach((color) => {
+    const key = playerKeysByColor.get(color)!;
+    const vps = playerState[`${key}_VICTORY_POINTS`];
+    publicVpsByColor.set(color, vps);
+    if (vps > maxPublicVps) {
+      maxPublicVps = vps;
+    }
+  });
+  const victoryLeaders = new Set<Color>(
+    gameState.colors.filter(
+      (color) => publicVpsByColor.get(color)! === maxPublicVps
+    )
+  );
+
   const playerSections = gameState.colors.map((color) => {
     const key = playerKey(gameState, color);
+    const showFullDetails =
+      viewerColor !== null && viewerColor !== undefined && color === viewerColor;
     return (
       <React.Fragment key={color}>
         <PlayerStateBox
           playerState={gameState.player_state}
           playerKey={key}
           color={color}
+          playerName={playerNames?.[color] ?? null}
+          showFullDevelopmentCards={showFullDetails}
+          isArmyLeader={armyLeaders.has(color)}
+          isRoadLeader={roadLeaders.has(color)}
+          isVictoryLeader={victoryLeaders.has(color)}
         />
         <Divider />
       </React.Fragment>
@@ -50,7 +97,13 @@ function DrawerContent({ gameState }: { gameState: GameState }) {
   );
 }
 
-export default function LeftDrawer() {
+type LeftDrawerProps = {
+  playerNames?: Partial<Record<Color, string | null>>;
+  viewerColor?: Color | null;
+};
+
+export default function LeftDrawer(props: LeftDrawerProps = {}) {
+  const { playerNames, viewerColor = null } = props;
   const { state, dispatch } = useContext(store);
   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -88,7 +141,11 @@ export default function LeftDrawer() {
           disableDiscovery={iOS}
           onKeyDown={closeLeftDrawer}
         >
-          <DrawerContent gameState={state.gameState as GameState} />
+          <DrawerContent
+            gameState={state.gameState as GameState}
+            playerNames={playerNames}
+            viewerColor={viewerColor}
+          />
         </SwipeableDrawer>
       </Hidden>
       <Hidden
@@ -96,7 +153,11 @@ export default function LeftDrawer() {
         implementation="css"
       >
         <Drawer className="left-drawer" anchor="left" variant="permanent" open>
-          <DrawerContent gameState={state.gameState as GameState} />
+          <DrawerContent
+            gameState={state.gameState as GameState}
+            playerNames={playerNames}
+            viewerColor={viewerColor}
+          />
         </Drawer>
       </Hidden>
     </>

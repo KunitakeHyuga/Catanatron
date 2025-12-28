@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useContext,
   useCallback,
+  useMemo,
 } from "react";
 import memoize from "fast-memoize";
 import { Button } from "@mui/material";
@@ -31,6 +32,8 @@ import type {
   GameAction,
   ResourceCard,
   MaritimeTradeAction,
+  GameState,
+  Color,
 } from "../utils/api.types"; // Add GameState to the import, adjust path if needed
 import { getHumanColor, playerKey } from "../utils/stateUtils";
 import { postAction } from "../utils/apiClient";
@@ -56,23 +59,51 @@ const RESOURCE_ORDER_INDEX: Record<ResourceCard, number> =
     {} as Record<ResourceCard, number>
   );
 
-function PlayButtons() {
-  const { gameId } = useParams();
-  if (!gameId) {
-    console.error("URL パラメーターにゲームIDが見つかりません。");
+type PlayButtonsProps = {
+  gameId?: string | null;
+  actionExecutor?: (action?: GameAction) => Promise<GameState>;
+  disableActions?: boolean;
+  playerColorOverride?: Color | null;
+};
+
+function PlayButtons({
+  gameId,
+  actionExecutor,
+  disableActions = false,
+  playerColorOverride,
+}: PlayButtonsProps) {
+  if (!gameId && !actionExecutor) {
+    console.error("ゲームIDが見つからないためアクションを送信できません。");
     return null;
   }
   const { state, dispatch } = useContext(store);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [resourceSelectorOpen, setResourceSelectorOpen] = useState(false);
 
-  const carryOutAction = useCallback(
-    memoize((action?: GameAction) => async () => {
-      const gameState = await postAction(gameId, action);
-      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-    }),
-    [enqueueSnackbar, closeSnackbar]
+  const executeAction = useCallback(
+    async (action?: GameAction) => {
+      if (actionExecutor) {
+        return actionExecutor(action);
+      }
+      if (!gameId) {
+        throw new Error("gameId が必要です");
+      }
+      return postAction(gameId, action);
+    },
+    [actionExecutor, gameId]
+  );
+
+  const carryOutAction = useMemo(
+    () =>
+      memoize((action?: GameAction) => async () => {
+        if (disableActions) {
+          return;
+        }
+        const gameState = await executeAction(action);
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+        dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+      }),
+    [dispatch, enqueueSnackbar, closeSnackbar, executeAction, disableActions]
   );
 
   const {
@@ -97,7 +128,7 @@ function PlayButtons() {
       .filter((action) => action[1].startsWith("PLAY"))
       .map((action) => action[1])
   );
-  const humanColor = getHumanColor(gameState);
+  const humanColor = playerColorOverride ?? getHumanColor(gameState);
   const setIsPlayingMonopoly = useCallback(() => {
     dispatch({ type: ACTIONS.SET_IS_PLAYING_MONOPOLY });
   }, [dispatch]);
@@ -108,6 +139,9 @@ function PlayButtons() {
   }, [gameState.current_playable_actions]);
   const handleResourceSelection = useCallback(
     async (selectedResources: ResourceCard | ResourceCard[]) => {
+      if (disableActions) {
+        return;
+      }
       setResourceSelectorOpen(false);
       let action: GameAction;
       if (isPlayingMonopoly) {
@@ -126,18 +160,19 @@ function PlayButtons() {
         console.error("無効な資源選択モードです");
         return;
       }
-      const gameState = await postAction(gameId, action);
+      const gameState = await executeAction(action);
       dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
       dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
     },
     [
-      gameId,
       humanColor,
       dispatch,
       enqueueSnackbar,
       closeSnackbar,
       isPlayingMonopoly,
       isPlayingYearOfPlenty,
+      executeAction,
+      disableActions,
     ]
   );
   const handleOpenResourceSelector = useCallback(() => {
@@ -147,57 +182,84 @@ function PlayButtons() {
     dispatch({ type: ACTIONS.SET_IS_PLAYING_YEAR_OF_PLENTY });
   }, [dispatch]);
   const playRoadBuilding = useCallback(async () => {
+    if (disableActions) {
+      return;
+    }
     const action: GameAction = [humanColor, "PLAY_ROAD_BUILDING", null];
-    const gameState = await postAction(gameId, action);
+    const gameState = await executeAction(action);
     dispatch({ type: ACTIONS.PLAY_ROAD_BUILDING });
     dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
     dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-  }, [gameId, dispatch, enqueueSnackbar, closeSnackbar, humanColor]);
+  }, [
+    dispatch,
+    enqueueSnackbar,
+    closeSnackbar,
+    humanColor,
+    executeAction,
+    disableActions,
+  ]);
   const playKnightCard = useCallback(async () => {
+    if (disableActions) {
+      return;
+    }
     const action: GameAction = [humanColor, "PLAY_KNIGHT_CARD", null];
-    const gameState = await postAction(gameId, action);
+    const gameState = await executeAction(action);
     dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
     dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-  }, [gameId, dispatch, enqueueSnackbar, closeSnackbar, humanColor]);
+  }, [
+    dispatch,
+    enqueueSnackbar,
+    closeSnackbar,
+    humanColor,
+    executeAction,
+    disableActions,
+  ]);
   const useItems = [
     {
-      label: "騎士カード",
-      disabled: !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
+      label: "騎士",
+      disabled: disableActions || !playableDevCardTypes.has("PLAY_KNIGHT_CARD"),
       onClick: playKnightCard,
     },
     {
-      label: "独占カード",
-      disabled: !playableDevCardTypes.has("PLAY_MONOPOLY"),
+      label: "独占",
+      disabled: disableActions || !playableDevCardTypes.has("PLAY_MONOPOLY"),
       onClick: setIsPlayingMonopoly,
     },
     {
-      label: "豊穣の年カード",
-      disabled: !playableDevCardTypes.has("PLAY_YEAR_OF_PLENTY"),
+      label: "収穫",
+      disabled: disableActions || !playableDevCardTypes.has("PLAY_YEAR_OF_PLENTY"),
       onClick: setIsPlayingYearOfPlenty,
     },
     {
-      label: "街道建設カード",
-      disabled: !playableDevCardTypes.has("PLAY_ROAD_BUILDING"),
+      label: "街道建設",
+      disabled: disableActions || !playableDevCardTypes.has("PLAY_ROAD_BUILDING"),
       onClick: playRoadBuilding,
     },
   ];
 
   const buildActionTypes = new Set(
-    gameState.is_initial_build_phase
-      ? []
-      : gameState.current_playable_actions
-          .filter(
-            (action) =>
-              action[1].startsWith("BUY") || action[1].startsWith("BUILD")
-          )
-          .map((a) => a[1])
+    gameState.current_playable_actions
+      .filter(
+        (action) => action[1].startsWith("BUY") || action[1].startsWith("BUILD")
+      )
+      .map((a) => a[1])
   );
   const buyDevCard = useCallback(async () => {
+    if (disableActions) {
+      return;
+    }
     const action: GameAction = [humanColor, "BUY_DEVELOPMENT_CARD", null];
-    const gameState = await postAction(gameId, action);
+    const gameState = await executeAction(action);
     dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
     dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-  }, [gameId, dispatch, enqueueSnackbar, closeSnackbar, humanColor]);
+  }, [
+    dispatch,
+    enqueueSnackbar,
+    closeSnackbar,
+    humanColor,
+    executeAction,
+    disableActions,
+  ]);
   const setIsBuildingSettlement = useCallback(() => {
     dispatch({ type: ACTIONS.SET_IS_BUILDING_SETTLEMENT });
   }, [dispatch]);
@@ -210,22 +272,22 @@ function PlayButtons() {
   const buildItems = [
     {
       label: "街道",
-      disabled: !buildActionTypes.has("BUILD_ROAD"),
+      disabled: disableActions || !buildActionTypes.has("BUILD_ROAD"),
       onClick: toggleBuildingRoad,
     },
     {
       label: "開拓地",
-      disabled: !buildActionTypes.has("BUILD_SETTLEMENT"),
+      disabled: disableActions || !buildActionTypes.has("BUILD_SETTLEMENT"),
       onClick: setIsBuildingSettlement,
     },
     {
       label: "都市",
-      disabled: !buildActionTypes.has("BUILD_CITY"),
+      disabled: disableActions || !buildActionTypes.has("BUILD_CITY"),
       onClick: setIsBuildingCity,
     },
     {
       label: "開発カードを購入",
-      disabled: !buildActionTypes.has("BUY_DEVELOPMENT_CARD"),
+      disabled: disableActions || !buildActionTypes.has("BUY_DEVELOPMENT_CARD"),
       onClick: buyDevCard,
     },
   ];
@@ -280,21 +342,24 @@ function PlayButtons() {
       })
       .map(({ action, label }) => ({
         label,
-        disabled: false,
+        disabled: disableActions,
         onClick: carryOutAction(action),
       }));
-  }, [tradeActions, carryOutAction]);
+  }, [tradeActions, carryOutAction, disableActions]);
 
   const setIsMovingRobber = useCallback(() => {
     dispatch({ type: ACTIONS.SET_IS_MOVING_ROBBER });
   }, [dispatch]);
   const rollAction = carryOutAction([humanColor, "ROLL", null]);
+  const discardAction = carryOutAction([humanColor, "DISCARD", null]);
   const proceedAction = carryOutAction();
   const endTurnAction = carryOutAction([humanColor, "END_TURN", null]);
   return (
     <>
       <OptionsButton
-        disabled={playableDevCardTypes.size === 0 || isPlayingDevCard}
+        disabled={
+          disableActions || playableDevCardTypes.size === 0 || isPlayingDevCard
+        }
         menuListId="use-menu-list"
         icon={<SimCardIcon />}
         items={useItems}
@@ -302,7 +367,9 @@ function PlayButtons() {
         使用
       </OptionsButton>
       <OptionsButton
-        disabled={buildActionTypes.size === 0 || isPlayingDevCard}
+        disabled={
+          disableActions || buildActionTypes.size === 0 || isPlayingDevCard
+        }
         menuListId="build-menu-list"
         icon={<BuildIcon />}
         items={buildItems}
@@ -310,7 +377,7 @@ function PlayButtons() {
         建設/購入
       </OptionsButton>
       <OptionsButton
-        disabled={tradeItems.length === 0 || isPlayingDevCard}
+        disabled={disableActions || tradeItems.length === 0 || isPlayingDevCard}
         menuListId="trade-menu-list"
         icon={<AccountBalanceIcon />}
         items={tradeItems}
@@ -318,13 +385,15 @@ function PlayButtons() {
         交易
       </OptionsButton>
       <Button
-        disabled={gameState.is_initial_build_phase || isRoadBuilding}
+        disabled={
+          disableActions || gameState.is_initial_build_phase || isRoadBuilding
+        }
         variant="contained"
         color="primary"
         startIcon={<NavigateNextIcon />}
         onClick={
           isDiscard
-            ? proceedAction
+            ? discardAction
             : isMoveRobber
             ? setIsMovingRobber
             : isPlayingYearOfPlenty || isPlayingMonopoly
@@ -341,7 +410,13 @@ function PlayButtons() {
           : isPlayingYearOfPlenty || isPlayingMonopoly
           ? "選択"
           : isRoll
-          ? "ダイスを振る"
+          ? (
+            <>
+              ダイスを
+              <br />
+              振る
+            </>
+            )
           : "ターン終了"}
       </Button>
       <ResourceSelector
@@ -359,13 +434,27 @@ function PlayButtons() {
   );
 }
 
+type ActionsToolbarProps = {
+  isBotThinking: boolean;
+  replayMode: boolean;
+  gameIdOverride?: string | null;
+  actionExecutor?: (action?: GameAction) => Promise<GameState>;
+  actionsDisabled?: boolean;
+  playerColorOverride?: Color | null;
+  showResources?: boolean;
+};
+
 export default function ActionsToolbar({
   isBotThinking,
   replayMode,
-}: {
-  isBotThinking: boolean;
-  replayMode: boolean;
-}) {
+  gameIdOverride,
+  actionExecutor,
+  actionsDisabled = false,
+  playerColorOverride,
+  showResources = true,
+}: ActionsToolbarProps) {
+  const { gameId: routeGameId } = useParams();
+  const effectiveGameId = gameIdOverride ?? routeGameId;
   const { state, dispatch } = useContext(store);
   const { gameState } = state;
   if (gameState === null) {
@@ -386,39 +475,57 @@ export default function ActionsToolbar({
     });
   }, [dispatch]);
 
+  const humanColor = playerColorOverride ?? getHumanColor(gameState);
   const botsTurn = gameState.bot_colors.includes(gameState.current_color);
-  const humanColor = getHumanColor(gameState);
+  const waitingForOtherPlayer =
+    Boolean(playerColorOverride) && humanColor !== gameState.current_color;
+  const disableAllActions =
+    actionsDisabled || (playerColorOverride ? waitingForOtherPlayer : false) || botsTurn;
+  const shouldShowPrompt =
+    botsTurn || gameState.winning_color !== undefined || waitingForOtherPlayer;
+  const canShowPlayButtons = !replayMode && !gameState.winning_color;
   return (
     <>
-      <div className="state-summary">
-        <Hidden breakpoint={{ size: "md", direction: "up" }}>
-          <Button className="open-drawer-btn" onClick={openLeftDrawer}>
-            <ChevronLeftIcon />
-          </Button>
-        </Hidden>
-        {humanColor && (
-          <ResourceCards
-            playerState={gameState.player_state}
-            playerKey={playerKey(gameState, humanColor)}
-            wrapDevCards={false}
+      {showResources && (
+        <div className="state-summary">
+          <Hidden breakpoint={{ size: "md", direction: "up" }}>
+            <Button className="open-drawer-btn" onClick={openLeftDrawer}>
+              <ChevronLeftIcon />
+            </Button>
+          </Hidden>
+          {humanColor && (
+            <ResourceCards
+              playerState={gameState.player_state}
+              playerKey={playerKey(gameState, humanColor)}
+              wrapDevCards={false}
+            />
+          )}
+          <Hidden breakpoint={{ size: "lg", direction: "up" }}>
+            <Button
+              className="open-drawer-btn"
+              onClick={openRightDrawer}
+              style={{ marginLeft: "auto" }}
+            >
+              <ChevronRightIcon />
+            </Button>
+          </Hidden>
+        </div>
+      )}
+      <div className="actions-toolbar">
+        {canShowPlayButtons && (
+          <PlayButtons
+            gameId={effectiveGameId}
+            actionExecutor={actionExecutor}
+            disableActions={disableAllActions}
+            playerColorOverride={playerColorOverride ?? humanColor}
           />
         )}
-        <Hidden breakpoint={{ size: "lg", direction: "up" }}>
-          <Button
-            className="open-drawer-btn"
-            onClick={openRightDrawer}
-            style={{ marginLeft: "auto" }}
-          >
-            <ChevronRightIcon />
-          </Button>
-        </Hidden>
-      </div>
-      <div className="actions-toolbar">
-        {!(botsTurn || gameState.winning_color) && !replayMode && (
-          <PlayButtons />
-        )}
-        {(botsTurn || gameState.winning_color) && (
-          <Prompt gameState={gameState} isBotThinking={isBotThinking} />
+        {shouldShowPrompt && (
+          <Prompt
+            gameState={gameState}
+            isBotThinking={isBotThinking}
+            playerColor={playerColorOverride ?? humanColor}
+          />
         )}
         {/* <Button
           disabled={disabled}

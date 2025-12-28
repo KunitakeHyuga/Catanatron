@@ -5,6 +5,31 @@ import type { Color, GameAction, GameState } from "./api.types";
 
 type Player = "HUMAN" | "RANDOM" | "CATANATRON";
 export type StateIndex = number | `${number}` | "latest";
+export const PVP_TOKEN_HEADER = "X-PVP-Token";
+
+export type PvpSeat = {
+  color: Color;
+  user_name: string | null;
+  is_you: boolean;
+};
+
+export type PvpRoom = {
+  room_id: string;
+  room_name: string;
+  seats: PvpSeat[];
+  started: boolean;
+  game_id: string | null;
+  state_index: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PvpJoinResponse = {
+  token: string;
+  seat_color: Color;
+  user_name: string;
+  room: PvpRoom;
+};
 
 export async function createGame(players: Player[]) {
   const response = await axios.post(API_URL + "/api/games", { players });
@@ -36,6 +61,8 @@ export type GameRecordSummary = {
   winning_color: Color | null;
   current_color: Color;
   player_colors: Color[];
+  updated_at?: string;
+  updated_at_ms?: number;
 };
 
 export async function listGames(): Promise<GameRecordSummary[]> {
@@ -45,8 +72,111 @@ export async function listGames(): Promise<GameRecordSummary[]> {
   return response.data.games;
 }
 
+const buildPvpHeaders = (token: string) => ({
+  headers: { [PVP_TOKEN_HEADER]: token },
+});
+
+export async function listPvpRooms(): Promise<PvpRoom[]> {
+  const response = await axios.get<{ rooms: PvpRoom[] }>(
+    `${API_URL}/api/pvp/rooms`
+  );
+  return response.data.rooms;
+}
+
+export async function createPvpRoom(
+  roomName?: string
+): Promise<PvpRoom> {
+  const response = await axios.post<PvpRoom>(
+    `${API_URL}/api/pvp/rooms`,
+    roomName ? { room_name: roomName } : {}
+  );
+  return response.data;
+}
+
+export async function joinPvpRoom(
+  roomId: string,
+  userName: string
+): Promise<PvpJoinResponse> {
+  const response = await axios.post<PvpJoinResponse>(
+    `${API_URL}/api/pvp/rooms/${roomId}/join`,
+    { user_name: userName }
+  );
+  return response.data;
+}
+
+export async function leavePvpRoom(
+  roomId: string,
+  token: string
+): Promise<PvpRoom> {
+  const response = await axios.post<{ room: PvpRoom }>(
+    `${API_URL}/api/pvp/rooms/${roomId}/leave`,
+    {},
+    buildPvpHeaders(token)
+  );
+  return response.data.room;
+}
+
+export async function getPvpRoomStatus(
+  roomId: string,
+  token?: string | null
+): Promise<PvpRoom> {
+  const config = token ? buildPvpHeaders(token) : {};
+  const response = await axios.get<PvpRoom>(
+    `${API_URL}/api/pvp/rooms/${roomId}/status`,
+    config
+  );
+  return response.data;
+}
+
+export async function startPvpRoom(
+  roomId: string,
+  token: string
+): Promise<{ game_id: string }> {
+  const response = await axios.post<{ game_id: string }>(
+    `${API_URL}/api/pvp/rooms/${roomId}/start`,
+    {},
+    buildPvpHeaders(token)
+  );
+  return response.data;
+}
+
+export async function getPvpGameState(
+  roomId: string,
+  token: string,
+  stateIndex: StateIndex = "latest"
+): Promise<GameState> {
+  const response = await axios.get<GameState>(
+    `${API_URL}/api/pvp/rooms/${roomId}/game`,
+    {
+      ...buildPvpHeaders(token),
+      params: { state: stateIndex },
+    }
+  );
+  return response.data;
+}
+
+export async function postPvpAction(
+  roomId: string,
+  token: string,
+  action?: GameAction,
+  expectedStateIndex?: number
+): Promise<GameState> {
+  const response = await axios.post<GameState>(
+    `${API_URL}/api/pvp/rooms/${roomId}/action`,
+    { action, expected_state_index: expectedStateIndex },
+    buildPvpHeaders(token)
+  );
+  return response.data;
+}
+
 export type MCTSProbabilities = {
   [K in Color]: number;
+};
+
+export type NegotiationAdviceResult = {
+  success: boolean;
+  advice?: string;
+  error?: string;
 };
 
 type MCTSSuccessBody = {
@@ -89,6 +219,23 @@ export async function getMctsAnalysis(
       data: error.response?.data,
       stack: error.stack,
     });
+    throw error;
+  }
+}
+
+export async function requestNegotiationAdvice(
+  gameId: string,
+  stateIndex: StateIndex = "latest"
+): Promise<NegotiationAdviceResult> {
+  try {
+    const response = await axios.post<NegotiationAdviceResult>(
+      `${API_URL}/api/games/${gameId}/states/${stateIndex}/negotiation-advice`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return error.response.data as NegotiationAdviceResult;
+    }
     throw error;
   }
 }

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Color, GameState } from "../utils/api.types";
-import { getHumanColor } from "../utils/stateUtils";
 
 export type RollValue = [number, number];
 
@@ -45,8 +44,8 @@ export default function useRollDisplay(gameState: GameState | null) {
     }
 
     if (!displayRollKey && !overlayKey) {
-      setDisplayRoll(latest.roll);
-      setDisplayRollKey(latest.key);
+      setOverlayRoll(latest.roll);
+      setOverlayKey(latest.key);
       return;
     }
 
@@ -54,12 +53,10 @@ export default function useRollDisplay(gameState: GameState | null) {
       return;
     }
 
-    const humanColor = gameState ? getHumanColor(gameState) : null;
     const shouldAnimateRoll =
-      latest.roller &&
-      humanColor &&
-      latest.roller === humanColor &&
-      gameState?.current_color === humanColor;
+      Boolean(latest.roll) &&
+      gameState &&
+      latest.roller === gameState.current_color;
 
     if (shouldAnimateRoll) {
       setOverlayRoll(latest.roll);
@@ -73,14 +70,14 @@ export default function useRollDisplay(gameState: GameState | null) {
     setOverlayKey(null);
   }, [latest, displayRollKey, overlayKey, gameState]);
 
-  const finalizeOverlay = () => {
+  const finalizeOverlay = useCallback(() => {
     if (overlayKey && overlayRoll) {
       setDisplayRoll(overlayRoll);
       setDisplayRollKey(overlayKey);
     }
     setOverlayRoll(null);
     setOverlayKey(null);
-  };
+  }, [overlayKey, overlayRoll]);
 
   return {
     displayRoll,
