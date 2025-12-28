@@ -410,7 +410,13 @@ function PlayButtons({
           : isPlayingYearOfPlenty || isPlayingMonopoly
           ? "選択"
           : isRoll
-          ? "ダイスを振る"
+          ? (
+            <>
+              ダイスを
+              <br />
+              振る
+            </>
+            )
           : "ターン終了"}
       </Button>
       <ResourceSelector
