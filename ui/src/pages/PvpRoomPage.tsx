@@ -320,7 +320,12 @@ export default function PvpRoomPage() {
     : undefined;
 
   const joinDialog = (
-    <Dialog open={joinDialogOpen} fullWidth maxWidth="xs">
+    <Dialog
+      open={joinDialogOpen}
+      fullWidth
+      maxWidth="xs"
+      PaperProps={{ className: "join-dialog-paper" }}
+    >
       <DialogTitle>ルームに参加</DialogTitle>
       <DialogContent>
         <TextField

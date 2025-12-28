@@ -45,6 +45,21 @@
   background: radial-gradient(circle at top, #1b2f5b 0%, #090f1f 45%, #05060f 100%);
 }
 
+.join-dialog-paper {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+
+  .MuiDialogContent-root {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
 .room-info-header {
   display: flex;
   flex-direction: column;
