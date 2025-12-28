@@ -5,7 +5,13 @@ import type { Color, GameState } from "./api.types";
  * @param gameState
  * @returns True if a human player needs to play
  */
-export function isPlayersTurn(gameState: GameState): boolean {
+export function isPlayersTurn(
+  gameState: GameState,
+  playerColor?: Color
+): boolean {
+  if (playerColor) {
+    return gameState.current_color === playerColor;
+  }
   return !gameState.bot_colors.includes(gameState.current_color);
 }
 

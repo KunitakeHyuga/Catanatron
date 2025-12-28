@@ -112,6 +112,13 @@ export default function HomePage() {
             >
               Catanatron 同士を観戦
             </Button>
+            <Button
+              variant="outlined"
+              className="main-action-button"
+              onClick={() => navigate("/pvp")}
+            >
+              PvP ルームに参加
+            </Button>
             <div className="records-link">
               <Button
                 variant="contained"

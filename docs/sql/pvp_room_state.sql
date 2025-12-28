@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS pvp_room_state (
+    id SERIAL PRIMARY KEY,
+    room_id VARCHAR(64) UNIQUE NOT NULL,
+    room_name VARCHAR(128) NOT NULL DEFAULT 'Room',
+    seats JSONB NOT NULL,
+    started BOOLEAN NOT NULL DEFAULT FALSE,
+    game_id VARCHAR(64),
+    state_index INTEGER,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

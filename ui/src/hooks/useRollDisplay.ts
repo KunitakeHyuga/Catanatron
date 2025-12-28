@@ -1,29 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Color, GameState } from "../utils/api.types";
-import { getHumanColor } from "../utils/stateUtils";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { GameState } from "../utils/api.types";
 
 export type RollValue = [number, number];
 
 type RollInfo = {
   roll: RollValue | null;
   key: string | null;
-  roller: Color | null;
 };
 
 function extractLatestRoll(gameState: GameState | null): RollInfo {
   if (!gameState) {
-    return { roll: null, key: null, roller: null };
+    return { roll: null, key: null };
   }
   for (let i = gameState.action_records.length - 1; i >= 0; i--) {
     const record = gameState.action_records[i];
     if (record[0][1] === "ROLL") {
       const roll = record[1] as RollValue;
       const key = `${roll[0]}-${roll[1]}-${i}`;
-      const roller = record[0][0] as Color;
-      return { roll, key, roller };
+      return { roll, key };
     }
   }
-  return { roll: null, key: null, roller: null };
+  return { roll: null, key: null };
 }
 
 export default function useRollDisplay(gameState: GameState | null) {
@@ -54,12 +51,7 @@ export default function useRollDisplay(gameState: GameState | null) {
       return;
     }
 
-    const humanColor = gameState ? getHumanColor(gameState) : null;
-    const shouldAnimateRoll =
-      latest.roller &&
-      humanColor &&
-      latest.roller === humanColor &&
-      gameState?.current_color === humanColor;
+    const shouldAnimateRoll = Boolean(latest.roll);
 
     if (shouldAnimateRoll) {
       setOverlayRoll(latest.roll);
@@ -73,14 +65,14 @@ export default function useRollDisplay(gameState: GameState | null) {
     setOverlayKey(null);
   }, [latest, displayRollKey, overlayKey, gameState]);
 
-  const finalizeOverlay = () => {
+  const finalizeOverlay = useCallback(() => {
     if (overlayKey && overlayRoll) {
       setDisplayRoll(overlayRoll);
       setDisplayRollKey(overlayKey);
     }
     setOverlayRoll(null);
     setOverlayKey(null);
-  };
+  }, [overlayKey, overlayRoll]);
 
   return {
     displayRoll,

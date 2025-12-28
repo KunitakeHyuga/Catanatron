@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import memoize from "fast-memoize";
 import { useMediaQuery, useTheme } from "@mui/material";
@@ -13,17 +13,17 @@ import type { CatanState } from "../store";
 import { useParams } from "react-router";
 import ACTIONS from "../actions";
 import Board from "./Board";
-import type { GameAction, TileCoordinate } from "../utils/api.types";
+import type { Color, GameAction, TileCoordinate, GameState } from "../utils/api.types";
 
 /**
  * Returns object representing actions to be taken if click on node.
  * @returns {3 => ["BLUE", "BUILD_CITY", 3], ...}
  */
-function buildNodeActions(state: CatanState) {
+function buildNodeActions(state: CatanState, playerColor?: Color | null) {
   if (!state.gameState)
     throw new Error("ゲーム状態の準備が整っていません。");
 
-  if (!isPlayersTurn(state.gameState)) {
+  if (!isPlayersTurn(state.gameState, playerColor ?? undefined)) {
     return {};
   }
 
@@ -54,10 +54,10 @@ function buildNodeActions(state: CatanState) {
   return nodeActions;
 }
 
-function buildEdgeActions(state: CatanState) {
+function buildEdgeActions(state: CatanState, playerColor?: Color | null) {
   if (!state.gameState)
     throw new Error("ゲーム状態の準備が整っていません。");
-  if (!isPlayersTurn(state.gameState)) {
+  if (!isPlayersTurn(state.gameState, playerColor ?? undefined)) {
     return {};
   }
 
@@ -85,45 +85,76 @@ function buildEdgeActions(state: CatanState) {
 
 type ZoomableBoardProps = {
   replayMode: boolean;
-}
+  gameIdOverride?: string | null;
+  actionExecutor?: (action: GameAction) => Promise<GameState>;
+  actionsDisabled?: boolean;
+  playerColorOverride?: Color | null;
+};
 
-export default function ZoomableBoard({ replayMode }: ZoomableBoardProps) {
+export default function ZoomableBoard({
+  replayMode,
+  gameIdOverride,
+  actionExecutor,
+  actionsDisabled = false,
+  playerColorOverride,
+}: ZoomableBoardProps) {
   const { gameId } = useParams();
+  const effectiveGameId = gameIdOverride ?? gameId;
   const { state, dispatch } = useContext(store);
   const { width, height } = useWindowSize();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.up("md"));
   const [show, setShow] = useState(false);
-  const gameState = state.gameState
+  const gameState = state.gameState;
   if (!gameState)
     throw new Error("ゲーム状態の準備が整っていません。");
-  if (!gameId)
-    throw new Error("URL に gameId が含まれていません。");
+  if (!effectiveGameId && !actionExecutor)
+    throw new Error("ゲームIDが見つからないためアクションを送信できません。");
+
+  const executeAction = useCallback(
+    async (action: GameAction) => {
+      if (actionsDisabled) {
+        return state.gameState as GameState;
+      }
+      if (actionExecutor) {
+        return actionExecutor(action);
+      }
+      if (!effectiveGameId) {
+        throw new Error("gameId が必要です");
+      }
+      return postAction(effectiveGameId, action);
+    },
+    [actionExecutor, effectiveGameId, actionsDisabled, state.gameState]
+  );
 
   // TODO: Move these up to GameScreen and let Zoomable be presentational component
   // https://stackoverflow.com/questions/61255053/react-usecallback-with-parameter
-  const buildOnNodeClick = useCallback(
-    memoize((id, action) => async () => {
-      console.log("ノードをクリックしました:", id, action);
-      if (action) {
-        const gameState = await postAction(gameId, action);
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      }
-    }),
-    []
+  const buildOnNodeClick = useMemo(
+    () =>
+      memoize((id, action) => async () => {
+        console.log("ノードをクリックしました:", id, action);
+        if (!action) {
+          return;
+        }
+        const updatedGameState = await executeAction(action);
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+      }),
+    [dispatch, executeAction]
   );
-  const buildOnEdgeClick = useCallback(
-    memoize((id, action) => async () => {
-      console.log("エッジをクリックしました:", id, action);
-      if (action) {
-        const gameState = await postAction(gameId, action);
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      }
-    }),
-    []
+  const buildOnEdgeClick = useMemo(
+    () =>
+      memoize((id, action) => async () => {
+        console.log("エッジをクリックしました:", id, action);
+        if (!action) {
+          return;
+        }
+        const updatedGameState = await executeAction(action);
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+      }),
+    [dispatch, executeAction]
   );
   const handleTileClick = useCallback(
-    (coordinate: TileCoordinate) => {
+    async (coordinate: TileCoordinate) => {
       console.log("タイルをクリックしました:", coordinate);
       if (!state.isMovingRobber) {
         return;
@@ -140,15 +171,23 @@ export default function ZoomableBoard({ replayMode }: ZoomableBoardProps) {
       if (!matchingAction) {
         return;
       }
-      postAction(gameId, matchingAction).then((gameState) => {
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      });
+      const updatedGameState = await executeAction(matchingAction);
+      dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
     },
-    [dispatch, gameId, gameState.current_playable_actions, state.isMovingRobber]
+    [
+      dispatch,
+      executeAction,
+      gameState.current_playable_actions,
+      state.isMovingRobber,
+    ]
   );
 
-  const nodeActions = replayMode ? {} : buildNodeActions(state);
-  const edgeActions = replayMode ? {} : buildEdgeActions(state);
+  const nodeActions = replayMode
+    ? {}
+    : buildNodeActions(state, playerColorOverride);
+  const edgeActions = replayMode
+    ? {}
+    : buildEdgeActions(state, playerColorOverride);
 
   useEffect(() => {
     setTimeout(() => {

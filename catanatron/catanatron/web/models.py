@@ -6,8 +6,20 @@ from catanatron.json import GameEncoder
 
 from catanatron.game import Game
 from catanatron.state_functions import get_state_index
-from sqlalchemy import MetaData, Column, Integer, String, LargeBinary, create_engine
+from datetime import datetime
+from sqlalchemy import (
+    MetaData,
+    Column,
+    Integer,
+    String,
+    LargeBinary,
+    Boolean,
+    DateTime,
+    JSON,
+    create_engine,
+)
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask import abort
@@ -40,6 +52,22 @@ class GameState(Base):
 
 
 db = SQLAlchemy(metadata=metadata)
+
+
+class PvpRoomState(Base):
+    __tablename__ = "pvp_room_state"
+
+    id = Column(Integer, primary_key=True)
+    room_id = Column(String(64), unique=True, nullable=False)
+    room_name = Column(String(128), nullable=False, default="Room")
+    seats = Column(MutableList.as_mutable(JSON), nullable=False)
+    started = Column(Boolean, nullable=False, default=False)
+    game_id = Column(String(64), nullable=True)
+    state_index = Column(Integer, nullable=True)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 @contextmanager

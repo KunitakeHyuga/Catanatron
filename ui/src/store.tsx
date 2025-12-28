@@ -49,11 +49,24 @@ const StateProvider = ({ children }: { children: React.ReactNode }) => {
           return { ...state, isLeftDrawerOpen: action.data };
         case ACTIONS.SET_RIGHT_DRAWER_OPENED:
           return { ...state, isRightDrawerOpen: action.data };
-        case ACTIONS.SET_GAME_STATE:
+        case ACTIONS.SET_GAME_STATE: {
+          const nextGameState = action.data as GameState | null;
+          const prevGameState = state.gameState;
+          const prevStateIndex = prevGameState?.state_index ?? null;
+          const nextStateIndex = nextGameState?.state_index ?? null;
+          const hasStateChanged =
+            prevGameState === null ||
+            nextGameState === null ||
+            prevStateIndex !== nextStateIndex;
+
+          if (!hasStateChanged) {
+            return { ...state, gameState: nextGameState };
+          }
+
           return {
             ...state,
-            gameState: action.data,
-            // Lazy way of turning these off
+            gameState: nextGameState,
+            // Reset build/ability toggles only when state actually advanced
             isBuildingRoad: false,
             isBuildingSettlement: false,
             isBuildingCity: false,
@@ -66,6 +79,7 @@ const StateProvider = ({ children }: { children: React.ReactNode }) => {
             isPlayingYearOfPlenty: false,
             isMovingRobber: false,
           };
+        }
         case ACTIONS.TOGGLE_BUILDING_ROAD:
           return { ...state, isBuildingRoad: !state.isBuildingRoad };
         case ACTIONS.SET_IS_BUILDING_SETTLEMENT:

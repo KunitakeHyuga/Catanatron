@@ -5,13 +5,27 @@ import { type Color, type PlayerState } from "../utils/api.types";
 import ResourceCards from "./ResourceCards";
 import { colorLabel } from "../utils/i18n";
 
-export default function PlayerStateBox({ playerState, playerKey, color }: {
-  playerState: PlayerState; playerKey: string; color: Color }) {
+type PlayerStateBoxProps = {
+  playerState: PlayerState;
+  playerKey: string;
+  color: Color;
+  playerName?: string | null;
+};
+
+export default function PlayerStateBox({
+  playerState,
+  playerKey,
+  color,
+  playerName,
+}: PlayerStateBoxProps) {
   const actualVps = playerState[`${playerKey}_ACTUAL_VICTORY_POINTS`];
+  const label = playerName
+    ? `${colorLabel(color)}（${playerName}）`
+    : colorLabel(color);
   return (
     <div className={cn("player-state-box foreground", color)}>
       <div className="player-header">
-        <span className="player-name">{colorLabel(color)}</span>
+        <span className="player-name">{label}</span>
         <span className="player-label">の所持カード</span>
       </div>
       <ResourceCards playerState={playerState} playerKey={playerKey} />

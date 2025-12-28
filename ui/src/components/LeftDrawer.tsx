@@ -10,12 +10,17 @@ import { humanizeActionRecord } from "../utils/promptUtils";
 import { store } from "../store";
 import ACTIONS from "../actions";
 import { playerKey } from "../utils/stateUtils";
-import { type GameState } from "../utils/api.types";
+import { type Color, type GameState } from "../utils/api.types";
 import { isTabOrShift, type InteractionEvent } from "../utils/events";
 
 import "./LeftDrawer.scss";
 
-function DrawerContent({ gameState }: { gameState: GameState }) {
+type DrawerContentProps = {
+  gameState: GameState;
+  playerNames?: Partial<Record<Color, string | null>>;
+};
+
+function DrawerContent({ gameState, playerNames }: DrawerContentProps) {
   const playerSections = gameState.colors.map((color) => {
     const key = playerKey(gameState, color);
     return (
@@ -24,6 +29,7 @@ function DrawerContent({ gameState }: { gameState: GameState }) {
           playerState={gameState.player_state}
           playerKey={key}
           color={color}
+          playerName={playerNames?.[color] ?? null}
         />
         <Divider />
       </React.Fragment>
@@ -50,7 +56,12 @@ function DrawerContent({ gameState }: { gameState: GameState }) {
   );
 }
 
-export default function LeftDrawer() {
+type LeftDrawerProps = {
+  playerNames?: Partial<Record<Color, string | null>>;
+};
+
+export default function LeftDrawer(props: LeftDrawerProps = {}) {
+  const { playerNames } = props;
   const { state, dispatch } = useContext(store);
   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -88,7 +99,10 @@ export default function LeftDrawer() {
           disableDiscovery={iOS}
           onKeyDown={closeLeftDrawer}
         >
-          <DrawerContent gameState={state.gameState as GameState} />
+          <DrawerContent
+            gameState={state.gameState as GameState}
+            playerNames={playerNames}
+          />
         </SwipeableDrawer>
       </Hidden>
       <Hidden
@@ -96,7 +110,10 @@ export default function LeftDrawer() {
         implementation="css"
       >
         <Drawer className="left-drawer" anchor="left" variant="permanent" open>
-          <DrawerContent gameState={state.gameState as GameState} />
+          <DrawerContent
+            gameState={state.gameState as GameState}
+            playerNames={playerNames}
+          />
         </Drawer>
       </Hidden>
     </>
