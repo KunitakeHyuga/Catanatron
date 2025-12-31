@@ -128,7 +128,11 @@ def post_action_endpoint(game_id):
         upsert_game_state(game)
     else:
         action = action_from_json(request.json)
-        game.execute(action)
+        try:
+            game.execute(action)
+        except ValueError as exc:
+            logging.warning("Invalid action for game %s: %s", game_id, exc)
+            abort(400, description=str(exc))
         upsert_game_state(game)
 
     return Response(

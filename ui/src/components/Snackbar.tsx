@@ -29,13 +29,14 @@ export function dispatchSnackbar(
   closeSnackbar: (key?: string | number) => void,
   gameState: GameState
 ) {
-  enqueueSnackbar(
-    humanizeActionRecord(gameState, gameState.action_records.slice(-1)[0]),
-    {
-      action: snackbarActions(closeSnackbar),
-      onClick: () => {
-        closeSnackbar();
-      },
-    }
-  );
+  const latestAction = gameState.action_records.slice(-1)[0];
+  if (!latestAction) {
+    return;
+  }
+  enqueueSnackbar(humanizeActionRecord(gameState, latestAction), {
+    action: snackbarActions(closeSnackbar),
+    onClick: () => {
+      closeSnackbar();
+    },
+  });
 }

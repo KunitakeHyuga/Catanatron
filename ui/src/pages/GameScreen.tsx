@@ -69,8 +69,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     }
     const botShouldAct =
       state.gameState.bot_colors.includes(state.gameState.current_color) &&
-      !state.gameState.winning_color &&
-      !(state.gameState.is_initial_build_phase && selectedGameId === null);
+      !state.gameState.winning_color;
     if (!botShouldAct || botActionInFlight) {
       return;
     }

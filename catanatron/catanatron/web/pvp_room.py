@@ -3,14 +3,13 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from flask import abort
 
 from catanatron.game import Game
-from catanatron.models.player import Color
-from catanatron.players.value import ValueFunctionPlayer
+from catanatron.models.player import Color, Player
 from catanatron.state_functions import get_state_index
 from catanatron.web.models import (
     PvpRoomState,
@@ -23,6 +22,16 @@ from catanatron.json import action_from_json
 PVP_TOKEN_HEADER = "X-PVP-Token"
 SEAT_ORDER = [Color.RED, Color.BLUE, Color.WHITE, Color.ORANGE]
 MIN_PLAYERS_TO_START = 2
+
+
+class PvpHumanPlayer(Player):
+    """Placeholder player for PvP games. Actions come via HTTP requests."""
+
+    def __init__(self, color: Color):
+        super().__init__(color, is_bot=False)
+
+    def decide(self, game, playable_actions):
+        raise RuntimeError("PvP games expect actions from human clients.")
 
 
 def _default_seats():
@@ -221,7 +230,7 @@ def start_room(session: SessionInfo) -> Dict:
         abort(400, description=f"{MIN_PLAYERS_TO_START}人以上のプレイヤーが必要です。")
 
     players = [
-        ValueFunctionPlayer(Color(seat["color"]), is_bot=False)
+        PvpHumanPlayer(Color(seat["color"]))
         for seat in filled_seats
     ]
     game = Game(players=players)
@@ -269,7 +278,10 @@ def submit_action(
         abort(409, description="状態が最新ではありません。")
 
     parsed_action = action_from_json(action_payload)
-    game.execute(parsed_action)
+    try:
+        game.execute(parsed_action)
+    except ValueError as exc:
+        abort(400, description=str(exc))
     upsert_game_state(game)
     room.state_index = get_state_index(game.state)
     db.session.add(room)

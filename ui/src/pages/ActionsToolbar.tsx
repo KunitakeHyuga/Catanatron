@@ -99,9 +99,16 @@ function PlayButtons({
         if (disableActions) {
           return;
         }
-        const gameState = await executeAction(action);
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-        dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+        try {
+          const gameState = await executeAction(action);
+          dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+          dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+        } catch (error) {
+          console.error("アクション送信に失敗しました:", error);
+          enqueueSnackbar("アクションの送信に失敗しました。", {
+            variant: "error",
+          });
+        }
       }),
     [dispatch, enqueueSnackbar, closeSnackbar, executeAction, disableActions]
   );
@@ -160,9 +167,16 @@ function PlayButtons({
         console.error("無効な資源選択モードです");
         return;
       }
-      const gameState = await executeAction(action);
-      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+      try {
+        const gameState = await executeAction(action);
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+        dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+      } catch (error) {
+        console.error("資源選択アクションに失敗しました:", error);
+        enqueueSnackbar("アクションの送信に失敗しました。", {
+          variant: "error",
+        });
+      }
     },
     [
       humanColor,
@@ -186,10 +200,17 @@ function PlayButtons({
       return;
     }
     const action: GameAction = [humanColor, "PLAY_ROAD_BUILDING", null];
-    const gameState = await executeAction(action);
-    dispatch({ type: ACTIONS.PLAY_ROAD_BUILDING });
-    dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-    dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    try {
+      const gameState = await executeAction(action);
+      dispatch({ type: ACTIONS.PLAY_ROAD_BUILDING });
+      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+      dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    } catch (error) {
+      console.error("街道建設カードの使用に失敗しました:", error);
+      enqueueSnackbar("アクションの送信に失敗しました。", {
+        variant: "error",
+      });
+    }
   }, [
     dispatch,
     enqueueSnackbar,
@@ -203,9 +224,16 @@ function PlayButtons({
       return;
     }
     const action: GameAction = [humanColor, "PLAY_KNIGHT_CARD", null];
-    const gameState = await executeAction(action);
-    dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-    dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    try {
+      const gameState = await executeAction(action);
+      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+      dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    } catch (error) {
+      console.error("騎士カードの使用に失敗しました:", error);
+      enqueueSnackbar("アクションの送信に失敗しました。", {
+        variant: "error",
+      });
+    }
   }, [
     dispatch,
     enqueueSnackbar,
@@ -249,9 +277,16 @@ function PlayButtons({
       return;
     }
     const action: GameAction = [humanColor, "BUY_DEVELOPMENT_CARD", null];
-    const gameState = await executeAction(action);
-    dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-    dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    try {
+      const gameState = await executeAction(action);
+      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
+      dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
+    } catch (error) {
+      console.error("開発カードの購入に失敗しました:", error);
+      enqueueSnackbar("アクションの送信に失敗しました。", {
+        variant: "error",
+      });
+    }
   }, [
     dispatch,
     enqueueSnackbar,

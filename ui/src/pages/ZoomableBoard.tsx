@@ -136,8 +136,12 @@ export default function ZoomableBoard({
         if (!action) {
           return;
         }
-        const updatedGameState = await executeAction(action);
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+        try {
+          const updatedGameState = await executeAction(action);
+          dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+        } catch (error) {
+          console.error("ノードアクションに失敗しました:", error);
+        }
       }),
     [dispatch, executeAction]
   );
@@ -148,8 +152,12 @@ export default function ZoomableBoard({
         if (!action) {
           return;
         }
-        const updatedGameState = await executeAction(action);
-        dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+        try {
+          const updatedGameState = await executeAction(action);
+          dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+        } catch (error) {
+          console.error("街道アクションに失敗しました:", error);
+        }
       }),
     [dispatch, executeAction]
   );
@@ -171,8 +179,12 @@ export default function ZoomableBoard({
       if (!matchingAction) {
         return;
       }
-      const updatedGameState = await executeAction(matchingAction);
-      dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+      try {
+        const updatedGameState = await executeAction(matchingAction);
+        dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedGameState });
+      } catch (error) {
+        console.error("盗賊アクションに失敗しました:", error);
+      }
     },
     [
       dispatch,
