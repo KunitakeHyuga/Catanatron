@@ -107,6 +107,7 @@ class GameEncoder(json.JSONEncoder):
                 "longest_roads_by_player": longest_roads_by_player(obj.state),
                 "winning_color": obj.winning_color(),
                 "state_index": get_state_index(obj.state),
+                "has_human_player": any(not player.is_bot for player in obj.state.players),
             }
         if isinstance(obj, Water):
             return {"type": "WATER"}

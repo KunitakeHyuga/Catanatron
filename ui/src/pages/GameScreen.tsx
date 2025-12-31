@@ -27,16 +27,16 @@ import BuildCostGuide from "../components/BuildCostGuide";
 import { upsertLocalRecord } from "../utils/localRecords";
 import type { GameAction, GameState } from "../utils/api.types";
 
-const ROBOT_THINKING_TIME = 3000;
-const BOT_ACTION_DELAY = 2500;
+const HUMAN_BOT_DELAY_MS = 2500;
+const DICE_ROLL_DELAY_MS = 4000;
 
 function GameScreen({ replayMode }: { replayMode: boolean }) {
   const { gameId, stateIndex } = useParams();
   const { state, dispatch } = useContext(store);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const [botActionInFlight, setBotActionInFlight] = useState(false);
   const botDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const botProcessingRef = useRef(false);
 
   // Load game state
   useEffect(() => {
@@ -62,92 +62,100 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
     };
   }, []);
 
+  const gameState = state.gameState;
+  const currentStateIndex = gameState?.state_index;
+  const isBotTurn = (state: GameState) =>
+    state.bot_colors.includes(state.current_color) && !state.winning_color;
+  const hasHumanPlayer =
+    gameState?.has_human_player ??
+    (gameState
+      ? gameState.colors.some(
+          (color) => !gameState.bot_colors.includes(color)
+        )
+      : false);
+
   // Maybe kick off next query?
   useEffect(() => {
-    if (!state.gameState || replayMode || !gameId) {
+    if (!gameState || replayMode || !gameId) {
+      setIsBotThinking(false);
       return;
     }
-    const botShouldAct =
-      state.gameState.bot_colors.includes(state.gameState.current_color) &&
-      !state.gameState.winning_color;
-    if (!botShouldAct || botActionInFlight) {
+    if (!isBotTurn(gameState) || botProcessingRef.current) {
       return;
     }
-    setBotActionInFlight(true);
-    const showThinking = !state.gameState.is_initial_build_phase;
-    if (showThinking) {
-      setIsBotThinking(true);
-    }
 
-    const schedule = (
-      ms: number,
-      cb: () => void,
-      { skipIfInitialPlacement = false }: { skipIfInitialPlacement?: boolean } = {}
-    ) => {
-      if (
-        (skipIfInitialPlacement && state.gameState?.is_initial_build_phase) ||
-        ms <= 0
-      ) {
-        cb();
+    botProcessingRef.current = true;
+    let cancelled = false;
+
+    const wait = async (ms: number) => {
+      if (ms <= 0 || cancelled) {
         return;
       }
-      botDelayTimeoutRef.current = setTimeout(() => {
-        botDelayTimeoutRef.current = null;
-        cb();
-      }, ms);
-    };
-
-    const finishAction = () => {
-      if (!isUnmountedRef.current) {
-        if (showThinking) {
-          setIsBotThinking(false);
-        }
-        setBotActionInFlight(false);
-      }
-    };
-
-    const applyResultWithPause = (gameState: GameState) => {
-      if (isUnmountedRef.current) {
-        finishAction();
-        return;
-      }
-      dispatch({ type: ACTIONS.SET_GAME_STATE, data: gameState });
-      if (getHumanColor(gameState)) {
-        dispatchSnackbar(enqueueSnackbar, closeSnackbar, gameState);
-      }
-      schedule(BOT_ACTION_DELAY, finishAction, {
-        skipIfInitialPlacement: true,
+      await new Promise<void>((resolve) => {
+        botDelayTimeoutRef.current = setTimeout(() => {
+          botDelayTimeoutRef.current = null;
+          resolve();
+        }, ms);
       });
     };
 
-    const executeBotAction = async () => {
+    const processBots = async () => {
+      let nextState = gameState;
       try {
-        const start = Date.now();
-        const gameState = await postAction(gameId);
-        if (isUnmountedRef.current) {
-          finishAction();
-          return;
+        while (!cancelled && isBotTurn(nextState)) {
+          const shouldDelayBeforeAction =
+            hasHumanPlayer && !nextState.is_initial_build_phase;
+          setIsBotThinking(shouldDelayBeforeAction);
+
+          if (shouldDelayBeforeAction) {
+            await wait(HUMAN_BOT_DELAY_MS);
+          }
+
+          const updatedState = await postAction(gameId);
+
+          if (cancelled) {
+            break;
+          }
+
+          dispatch({ type: ACTIONS.SET_GAME_STATE, data: updatedState });
+          if (getHumanColor(updatedState)) {
+            dispatchSnackbar(enqueueSnackbar, closeSnackbar, updatedState);
+          }
+
+          nextState = updatedState;
         }
-        const elapsed = Date.now() - start;
-        const delay = Math.max(0, ROBOT_THINKING_TIME - elapsed);
-        schedule(delay, () => applyResultWithPause(gameState), {
-          skipIfInitialPlacement: true,
-        });
       } catch (error) {
         console.error("Failed to process bot action", error);
-        finishAction();
+      } finally {
+        if (botDelayTimeoutRef.current) {
+          clearTimeout(botDelayTimeoutRef.current);
+          botDelayTimeoutRef.current = null;
+        }
+        setIsBotThinking(false);
+        botProcessingRef.current = false;
       }
     };
 
-    executeBotAction();
+    processBots();
+
+    return () => {
+      cancelled = true;
+      if (botDelayTimeoutRef.current) {
+        clearTimeout(botDelayTimeoutRef.current);
+        botDelayTimeoutRef.current = null;
+      }
+      setIsBotThinking(false);
+      botProcessingRef.current = false;
+    };
   }, [
     gameId,
     replayMode,
-    state.gameState,
+    currentStateIndex,
     dispatch,
     enqueueSnackbar,
     closeSnackbar,
-    botActionInFlight,
+    gameState,
+    hasHumanPlayer,
   ]);
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =

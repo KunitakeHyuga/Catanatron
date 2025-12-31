@@ -126,6 +126,7 @@ export type GameState = {
   edgeActions?: GameAction[];
   nodeActions?: GameAction[];
   state_index: number;
+  has_human_player?: boolean;
 };
 const DIRECTIONS = [
   "NORTH",
