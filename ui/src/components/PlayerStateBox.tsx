@@ -28,6 +28,13 @@ export default function PlayerStateBox({
   isVictoryLeader = false,
 }: PlayerStateBoxProps) {
   const publicVps = playerState[`${playerKey}_VICTORY_POINTS`];
+  const actualVps = playerState[`${playerKey}_ACTUAL_VICTORY_POINTS`];
+  const victoryPointsDisplay =
+    showFullDevelopmentCards &&
+    typeof actualVps === "number" &&
+    actualVps !== publicVps
+      ? `${publicVps} (${actualVps})`
+      : publicVps;
   const colorText = colorLabel(color);
   const nameText = playerName ? `（${playerName}）` : "";
   return (
@@ -82,7 +89,7 @@ export default function PlayerStateBox({
           })}
           title="公開勝利点"
         >
-          {publicVps}
+          {victoryPointsDisplay}
           <small>公開勝利点</small>
         </div>
       </div>
