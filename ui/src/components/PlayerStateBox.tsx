@@ -51,7 +51,8 @@ export default function PlayerStateBox({
       <ResourceCards
         playerState={playerState}
         playerKey={playerKey}
-        hideDevelopmentCards
+        maskDevelopmentCards={!showFullDevelopmentCards}
+        hideDevelopmentCards={false}
       />
       <DevelopmentCardTable
         playerState={playerState}

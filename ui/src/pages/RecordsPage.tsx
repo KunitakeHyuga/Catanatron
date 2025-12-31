@@ -277,6 +277,7 @@ export default function RecordsPage() {
                           color={color}
                           playerState={gameState.player_state}
                           playerKey={playerKey(gameState, color)}
+                          showFullDevelopmentCards
                         />
                       ))}
                     </div>
