@@ -54,6 +54,21 @@ class GameState(Base):
 db = SQLAlchemy(metadata=metadata)
 
 
+class GameSummary(Base):
+    __tablename__ = "game_summaries"
+
+    id = Column(Integer, primary_key=True)
+    game_id = Column(String(64), unique=True, nullable=False)
+    latest_state_index = Column(Integer, nullable=False)
+    player_colors = Column(MutableList.as_mutable(JSON), nullable=False)
+    current_color = Column(String(16), nullable=True)
+    winning_color = Column(String(16), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
 class PvpRoomState(Base):
     __tablename__ = "pvp_room_state"
 
@@ -89,10 +104,34 @@ def database_session():
         session.close()
 
 
+def _upsert_game_summary(game: Game, session):
+    summary = session.query(GameSummary).filter_by(game_id=game.id).first()
+    player_colors = [color.value for color in game.state.colors]
+    current_color = game.state.current_color()
+    winning_color = game.winning_color()
+    latest_state_index = get_state_index(game.state)
+    if summary is None:
+        summary = GameSummary(
+            game_id=game.id,
+            latest_state_index=latest_state_index,
+            player_colors=player_colors,
+            current_color=current_color.value if current_color else None,
+            winning_color=winning_color.value if winning_color else None,
+        )
+        session.add(summary)
+    else:
+        summary.latest_state_index = latest_state_index
+        summary.player_colors = player_colors
+        summary.current_color = current_color.value if current_color else None
+        summary.winning_color = winning_color.value if winning_color else None
+        summary.updated_at = datetime.utcnow()
+
+
 def upsert_game_state(game: Game, session_param=None):
     game_state = GameState.from_game(game)
     session = session_param or db.session
     session.add(game_state)
+    _upsert_game_summary(game, session)
     session.commit()
     return game_state
 

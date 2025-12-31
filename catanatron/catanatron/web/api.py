@@ -10,6 +10,7 @@ from catanatron.web.models import (
     upsert_game_state,
     get_game_state,
     GameState,
+    GameSummary,
     db,
 )
 from catanatron.json import GameEncoder, action_from_json
@@ -65,32 +66,52 @@ def post_game_endpoint():
 
 @bp.route("/games", methods=("GET",))
 def list_games_endpoint():
-    results = (
-        db.session.query(
-            GameState.uuid,
-            func.max(GameState.state_index).label("state_index"),
-        )
-        .group_by(GameState.uuid)
-        .order_by(func.max(GameState.state_index).desc())
+    summaries = (
+        db.session.query(GameSummary)
+        .order_by(GameSummary.updated_at.desc())
         .limit(200)
         .all()
     )
-    summaries = []
-    for uuid, state_index in results:
-        game = get_game_state(uuid, state_index)
-        current_color = game.state.current_color()
-        winning_color = game.winning_color()
-        summaries.append(
+    payload = []
+    for summary in summaries:
+        payload.append(
             {
-                "game_id": uuid,
-                "state_index": state_index,
-                "winning_color": winning_color.value if winning_color else None,
-                "current_color": current_color.value if current_color else None,
-                "player_colors": [color.value for color in game.state.colors],
+                "game_id": summary.game_id,
+                "state_index": summary.latest_state_index,
+                "winning_color": summary.winning_color,
+                "current_color": summary.current_color,
+                "player_colors": summary.player_colors,
+                "updated_at": summary.updated_at.isoformat()
+                if summary.updated_at
+                else None,
             }
         )
-
-    return jsonify({"games": summaries})
+    if not payload:
+        legacy = (
+            db.session.query(
+                GameState.uuid,
+                func.max(GameState.state_index).label("state_index"),
+            )
+            .group_by(GameState.uuid)
+            .order_by(func.max(GameState.state_index).desc())
+            .limit(200)
+            .all()
+        )
+        for uuid, state_index in legacy:
+            game = get_game_state(uuid, state_index)
+            current_color = game.state.current_color()
+            winning_color = game.winning_color()
+            payload.append(
+                {
+                    "game_id": uuid,
+                    "state_index": state_index,
+                    "winning_color": winning_color.value if winning_color else None,
+                    "current_color": current_color.value if current_color else None,
+                    "player_colors": [color.value for color in game.state.colors],
+                    "updated_at": None,
+                }
+            )
+    return jsonify({"games": payload})
 
 
 @bp.route("/games/<string:game_id>/states/<string:state_index>", methods=("GET",))
