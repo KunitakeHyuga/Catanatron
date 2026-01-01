@@ -214,9 +214,18 @@ export default function RecordsPage() {
     <main className="records-page">
       <div className="records-header">
         <h1 className="logo">対戦記録</h1>
-        <button className="records-home-btn" onClick={() => navigate("/")}>
-          ホームに戻る
-        </button>
+        <div className="records-header-actions">
+          <button
+            className="delete-record-btn"
+            onClick={handleDeleteSelectedGame}
+            disabled={!selectedGameId || deletePending}
+          >
+            {deletePending ? "削除中..." : "試合結果を消す"}
+          </button>
+          <button className="records-home-btn" onClick={() => navigate("/")}>
+            ホームに戻る
+          </button>
+        </div>
       </div>
       {error && <div className="records-error">{error}</div>}
       <div className="records-layout">
@@ -301,17 +310,6 @@ export default function RecordsPage() {
                     {gameState.colors.length}人
                   </span>
                 </div>
-                {selectedGameId && (
-                  <div className="records-summary-actions">
-                    <button
-                      className="delete-record-btn"
-                      onClick={handleDeleteSelectedGame}
-                      disabled={deletePending}
-                    >
-                      {deletePending ? "削除中..." : "試合結果を消す"}
-                    </button>
-                  </div>
-                )}
               </section>
               <section className="records-detail-body">
                 <div className="records-main">
