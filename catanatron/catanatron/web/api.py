@@ -12,6 +12,7 @@ from catanatron.web.models import (
     GameState,
     GameSummary,
     db,
+    delete_game,
 )
 from catanatron.json import GameEncoder, action_from_json
 from catanatron.models.player import Color, Player, RandomPlayer
@@ -62,6 +63,14 @@ def post_game_endpoint():
     game = Game(players=players)
     upsert_game_state(game)
     return jsonify({"game_id": game.id})
+
+
+@bp.route("/games/<string:game_id>", methods=("DELETE",))
+def delete_game_endpoint(game_id):
+    deleted = delete_game(game_id)
+    if not deleted:
+        abort(404, description="Resource not found")
+    return jsonify({"deleted": True, "game_id": game_id})
 
 
 @bp.route("/games", methods=("GET",))

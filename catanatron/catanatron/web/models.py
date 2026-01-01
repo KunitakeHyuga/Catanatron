@@ -160,3 +160,22 @@ def get_game_state(game_id, state_index=None) -> Game | None:
     db.session.commit()
     game = pickle.loads(result.pickle_data)  # type: ignore
     return game
+
+
+def delete_game(game_id: str) -> bool:
+    """Remove stored states and summary for a game id."""
+    deleted_states = (
+        db.session.query(GameState)
+        .filter_by(uuid=game_id)
+        .delete(synchronize_session=False)
+    )
+    deleted_summary = (
+        db.session.query(GameSummary)
+        .filter_by(game_id=game_id)
+        .delete(synchronize_session=False)
+    )
+    if deleted_states == 0 and deleted_summary == 0:
+        db.session.rollback()
+        return False
+    db.session.commit()
+    return True

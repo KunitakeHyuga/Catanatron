@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { GridLoader } from "react-spinners";
+import type { AxiosError } from "axios";
 
 import "./RecordsPage.scss";
 import BoardSnapshot from "../components/BoardSnapshot";
 import PlayerStateBox from "../components/PlayerStateBox";
 import type { GameState } from "../utils/api.types";
-import { getState, listGames, type GameRecordSummary } from "../utils/apiClient";
+import {
+  deleteGame,
+  getState,
+  listGames,
+  type GameRecordSummary,
+} from "../utils/apiClient";
 import { playerKey } from "../utils/stateUtils";
 import { humanizeActionRecord } from "../utils/promptUtils";
 import { colorLabel } from "../utils/i18n";
 import {
   getLocalRecords,
   type LocalRecord,
+  removeLocalRecord,
 } from "../utils/localRecords";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
@@ -78,6 +85,7 @@ export default function RecordsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localAvailable, setLocalAvailable] = useState<boolean>(false);
+  const [deletePending, setDeletePending] = useState(false);
 
   const loadGames = useCallback(async () => {
     const localRecords = getLocalRecords();
@@ -170,6 +178,38 @@ export default function RecordsPage() {
     return `${colorLabel(selectedSummary.winning_color)} が勝利`;
   }, [selectedSummary]);
 
+  const handleDeleteSelectedGame = useCallback(async () => {
+    if (!selectedGameId) {
+      return;
+    }
+    const confirmed = window.confirm("選択中の試合結果を削除しますか？");
+    if (!confirmed) {
+      return;
+    }
+    setDeletePending(true);
+    setError(null);
+    try {
+      try {
+        await deleteGame(selectedGameId);
+      } catch (err) {
+        const axiosError = err as AxiosError;
+        if (axiosError?.response?.status !== 404) {
+          throw err;
+        }
+      }
+      removeLocalRecord(selectedGameId);
+      setSelectedGameId(null);
+      setGameState(null);
+      navigate("/records", { replace: true });
+      await loadGames();
+    } catch (err) {
+      console.error(err);
+      setError("試合結果を削除できませんでした。");
+    } finally {
+      setDeletePending(false);
+    }
+  }, [selectedGameId, loadGames, navigate]);
+
   return (
     <main className="records-page">
       <div className="records-header">
@@ -261,6 +301,17 @@ export default function RecordsPage() {
                     {gameState.colors.length}人
                   </span>
                 </div>
+                {selectedGameId && (
+                  <div className="records-summary-actions">
+                    <button
+                      className="delete-record-btn"
+                      onClick={handleDeleteSelectedGame}
+                      disabled={deletePending}
+                    >
+                      {deletePending ? "削除中..." : "試合結果を消す"}
+                    </button>
+                  </div>
+                )}
               </section>
               <section className="records-detail-body">
                 <div className="records-main">

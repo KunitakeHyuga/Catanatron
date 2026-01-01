@@ -36,6 +36,10 @@ export async function createGame(players: Player[]) {
   return response.data.game_id;
 }
 
+export async function deleteGame(gameId: string) {
+  await axios.delete(`${API_URL}/api/games/${gameId}`);
+}
+
 export async function getState(
   gameId: string,
   stateIndex: StateIndex = "latest"

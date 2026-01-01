@@ -204,6 +204,33 @@
       color: rgba(255, 255, 255, 0.6);
       margin-right: 8px;
     }
+
+    .records-summary-actions {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+
+      .delete-record-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #e53935, #b71c1c);
+        color: #ffecec;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease, opacity 0.2s ease;
+
+        &:hover {
+          background: linear-gradient(135deg, #ef5350, #c62828);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+      }
+    }
   }
 
   .records-board {

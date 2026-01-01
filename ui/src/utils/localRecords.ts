@@ -87,3 +87,13 @@ export function upsertLocalRecord(
     .slice(0, MAX_RECORDS);
   persist(updated);
 }
+
+export function removeLocalRecord(gameId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const remaining = getLocalRecords().filter(
+    (record) => record.game_id !== gameId
+  );
+  persist(remaining);
+}
