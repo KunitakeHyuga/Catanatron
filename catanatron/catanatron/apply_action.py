@@ -442,19 +442,9 @@ def apply_accept_trade(state: State, action: Action):
     new_acceptess[index] = True  # type: ignore
     state.acceptees = tuple(new_acceptess)
 
-    try:
-        # keep going around table w/o asking yourself or players that have answered
-        state.current_player_index = next(
-            i
-            for i, c in enumerate(state.colors)
-            if c != action.color and i > state.current_player_index
-        )
-        # .is_resolving_trade, .current_trade, .current_prompt, .acceptees stay the same
-    except StopIteration:
-        # by this action, there is at least 1 acceptee, so go to DECIDE_ACCEPTEES
-        # .is_resolving_trade, .current_trade, .acceptees stay the same
-        state.current_player_index = state.current_turn_index
-        state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
+    # immediately give control back to offering player to choose acceptee
+    state.current_player_index = state.current_turn_index
+    state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
 
     return ActionRecord(action=action, result=None)
 

@@ -15,7 +15,6 @@ import ACTIONS from "../actions";
 import { type StateIndex, getState, postAction } from "../utils/apiClient";
 import { dispatchSnackbar } from "../components/Snackbar";
 import { getHumanColor } from "../utils/stateUtils";
-import AnalysisBox from "../components/AnalysisBox";
 import NegotiationAdviceBox from "../components/NegotiationAdviceBox";
 import { Button, Divider } from "@mui/material";
 import DiceDisplay from "../components/DiceDisplay";
@@ -24,10 +23,11 @@ import RollingDiceOverlay from "../components/RollingDiceOverlay";
 import { colorLabel } from "../utils/i18n";
 import TurnIndicator from "../components/TurnIndicator";
 import BuildCostGuide from "../components/BuildCostGuide";
+import TradePanel from "../components/TradePanel";
 import { upsertLocalRecord } from "../utils/localRecords";
 import type { GameAction, GameState } from "../utils/api.types";
 
-const HUMAN_BOT_DELAY_MS = 2500;
+const HUMAN_BOT_DELAY_MS = 4000;
 const DICE_ROLL_DELAY_MS = 4000;
 
 function GameScreen({ replayMode }: { replayMode: boolean }) {
@@ -103,8 +103,11 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       let nextState = gameState;
       try {
         while (!cancelled && isBotTurn(nextState)) {
+          const isStandardTurn = nextState.current_prompt === "PLAY_TURN";
           const shouldDelayBeforeAction =
-            hasHumanPlayer && !nextState.is_initial_build_phase;
+            hasHumanPlayer &&
+            !nextState.is_initial_build_phase &&
+            isStandardTurn;
           setIsBotThinking(shouldDelayBeforeAction);
 
           if (shouldDelayBeforeAction) {
@@ -238,7 +241,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       )}
       <LeftDrawer viewerColor={humanColor ?? null} />
       <RightDrawer>
-        <AnalysisBox stateIndex={"latest"} />
+        <TradePanel actionExecutor={executePlayerAction} />
         <Divider />
         <NegotiationAdviceBox stateIndex={"latest"} />
         <Divider />

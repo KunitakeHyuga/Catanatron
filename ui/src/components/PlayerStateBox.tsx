@@ -5,6 +5,7 @@ import { type Color, type PlayerState } from "../utils/api.types";
 import ResourceCards from "./ResourceCards";
 import DevelopmentCardTable from "./DevelopmentCardTable";
 import { colorLabel } from "../utils/i18n";
+import CollapsibleSection from "./CollapsibleSection";
 
 type PlayerStateBoxProps = {
   playerState: PlayerState;

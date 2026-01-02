@@ -2,6 +2,7 @@ import { resourceLabel } from "../utils/i18n";
 import type { ResourceCard } from "../utils/api.types";
 
 import "./BuildCostGuide.scss";
+import CollapsibleSection from "./CollapsibleSection";
 
 type CostEntry = {
   key: string;
@@ -52,8 +53,10 @@ const BUILD_COSTS: CostEntry[] = [
 
 export default function BuildCostGuide() {
   return (
-    <section className="build-cost-guide">
-      <h3>建設コスト早見表</h3>
+    <CollapsibleSection
+      className="build-cost-guide"
+      title={<span className="build-cost-title">建設コスト早見表</span>}
+    >
       <div className="cost-list">
         {BUILD_COSTS.map((entry) => (
           <div className="cost-row" key={entry.key}>
@@ -72,6 +75,6 @@ export default function BuildCostGuide() {
           </div>
         ))}
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }

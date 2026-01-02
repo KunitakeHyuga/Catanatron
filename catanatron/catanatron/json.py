@@ -44,12 +44,58 @@ def action_from_json(data):
     elif action_type == ActionType.MARITIME_TRADE:
         value = tuple(data[2])
         action = Action(color, action_type, value)
+    elif action_type in (
+        ActionType.OFFER_TRADE,
+        ActionType.ACCEPT_TRADE,
+        ActionType.REJECT_TRADE,
+    ):
+        action = Action(color, action_type, tuple(data[2]))
+    elif action_type == ActionType.CONFIRM_TRADE:
+        value = list(data[2])
+        if len(value) >= 11 and isinstance(value[10], str):
+            value[10] = Color[value[10]]
+        action = Action(color, action_type, tuple(value))
     else:
         action = Action(color, action_type, data[2])
     return action
 
 
 class GameEncoder(json.JSONEncoder):
+    def _build_trade_state(self, state):
+        if not getattr(state, "is_resolving_trade", False):
+            return None
+        trade_vector = getattr(state, "current_trade", ())
+        if len(trade_vector) < 10:
+            return None
+        offer_counts = list(trade_vector[:5])
+        request_counts = list(trade_vector[5:10])
+        offerer_index = (
+            trade_vector[10]
+            if len(trade_vector) > 10 and isinstance(trade_vector[10], int)
+            else state.current_turn_index
+        )
+        num_players = len(state.colors)
+        if num_players == 0:
+            return None
+        offerer_index = offerer_index % num_players
+        offerer_color = state.colors[offerer_index]
+        acceptees = [
+            {
+                "color": self.default(color),
+                "accepted": accepted,
+            }
+            for idx, (color, accepted) in enumerate(
+                zip(state.colors, getattr(state, "acceptees", ()))
+            )
+            if idx != offerer_index
+        ]
+        return {
+            "offerer_color": self.default(offerer_color),
+            "offer": offer_counts,
+            "request": request_counts,
+            "acceptees": acceptees,
+        }
+
     def default(self, obj):
         if obj is None:
             return None
@@ -83,6 +129,7 @@ class GameEncoder(json.JSONEncoder):
                         "direction": self.default(direction),
                         "color": self.default(color),
                     }
+            trade_state = self._build_trade_state(obj.state)
             return {
                 "tiles": [
                     {"coordinate": coordinate, "tile": self.default(tile)}
@@ -108,6 +155,7 @@ class GameEncoder(json.JSONEncoder):
                 "winning_color": obj.winning_color(),
                 "state_index": get_state_index(obj.state),
                 "has_human_player": any(not player.is_bot for player in obj.state.players),
+                "trade": trade_state,
             }
         if isinstance(obj, Water):
             return {"type": "WATER"}

@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import memoize from "fast-memoize";
 import { useMediaQuery, useTheme } from "@mui/material";
@@ -105,6 +105,9 @@ export default function ZoomableBoard({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.up("md"));
   const [show, setShow] = useState(false);
+  const [recentNodeId, setRecentNodeId] = useState<number | null>(null);
+  const [recentEdgeId, setRecentEdgeId] = useState<string | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameState = state.gameState;
   if (!gameState)
     throw new Error("ゲーム状態の準備が整っていません。");
@@ -202,6 +205,47 @@ export default function ZoomableBoard({
     : buildEdgeActions(state, playerColorOverride);
 
   useEffect(() => {
+    if (!gameState || replayMode) {
+      return;
+    }
+    const { action_records: records } = gameState;
+    if (!records || records.length === 0) {
+      return;
+    }
+    const latest = records[records.length - 1][0];
+    let nextNode: number | null = null;
+    let nextEdge: string | null = null;
+    if (latest[1] === "BUILD_SETTLEMENT" || latest[1] === "BUILD_CITY") {
+      nextNode = latest[2] as number;
+    } else if (latest[1] === "BUILD_ROAD") {
+      const edge = latest[2] as [number, number];
+      nextEdge = `${edge[0]},${edge[1]}`;
+    }
+    if (!nextNode && !nextEdge) {
+      return;
+    }
+    setRecentNodeId(nextNode);
+    setRecentEdgeId(nextEdge);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = setTimeout(() => {
+      setRecentNodeId(null);
+      setRecentEdgeId(null);
+      highlightTimeoutRef.current = null;
+    }, 1600);
+  }, [gameState, replayMode]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     setTimeout(() => {
       setShow(true);
     }, 300);
@@ -226,6 +270,8 @@ export default function ZoomableBoard({
             gameState={gameState}
             isMobile={isMobile}
             isMovingRobber={state.isMovingRobber}
+            recentNodeId={recentNodeId}
+            recentEdgeId={recentEdgeId}
           />
         </TransformComponent>
       </div>

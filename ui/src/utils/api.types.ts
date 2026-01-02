@@ -23,6 +23,11 @@ export type GameActionRecord =
   | [PlayMonopolyAction, null]
   | [PlayYearOfPlentyAction, null]
   | [MaritimeTradeAction, null]
+  | [OfferTradeAction, null]
+  | [AcceptTradeAction, null]
+  | [RejectTradeAction, null]
+  | [ConfirmTradeAction, null]
+  | [CancelTradeAction, null]
   | [EndTurnAction, null];
 
 export type RollGameAction = [Color, "ROLL", null];
@@ -49,6 +54,25 @@ export type MaritimeTradeAction = [
   "MARITIME_TRADE",
   (ResourceCard | null)[]
 ];
+export type TradeOfferVector = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number
+];
+export type ActiveTradeVector = [...TradeOfferVector, number];
+export type TradeConfirmVector = [...TradeOfferVector, Color];
+export type OfferTradeAction = [Color, "OFFER_TRADE", TradeOfferVector];
+export type AcceptTradeAction = [Color, "ACCEPT_TRADE", ActiveTradeVector];
+export type RejectTradeAction = [Color, "REJECT_TRADE", ActiveTradeVector];
+export type ConfirmTradeAction = [Color, "CONFIRM_TRADE", TradeConfirmVector];
+export type CancelTradeAction = [Color, "CANCEL_TRADE", null];
 export type EndTurnAction = [Color, "END_TURN", null];
 
 export type GameAction =
@@ -64,11 +88,17 @@ export type GameAction =
   | PlayYearOfPlentyAction
   | MoveRobberAction
   | MaritimeTradeAction
+  | OfferTradeAction
+  | AcceptTradeAction
+  | RejectTradeAction
+  | ConfirmTradeAction
+  | CancelTradeAction
   | EndTurnAction;
 
 export type PlayerState = any;
 export type VictoryPointCard = "VICTORY_POINT";
 export type ResourceCard = "WOOD" | "BRICK" | "SHEEP" | "WHEAT" | "ORE";
+export type ResourceCounts = [number, number, number, number, number];
 export type Building = "SETTLEMENT" | "CITY";
 
 type ResourceTile = {
@@ -127,6 +157,7 @@ export type GameState = {
   nodeActions?: GameAction[];
   state_index: number;
   has_human_player?: boolean;
+  trade?: TradeSummary | null;
 };
 const DIRECTIONS = [
   "NORTH",
@@ -140,3 +171,10 @@ const DIRECTIONS = [
 ] as const;
 
 export type Direction = (typeof DIRECTIONS)[number];
+
+export type TradeSummary = {
+  offerer_color: Color;
+  offer: ResourceCounts;
+  request: ResourceCounts;
+  acceptees: Array<{ color: Color; accepted: boolean }>;
+};

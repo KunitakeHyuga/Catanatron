@@ -10,7 +10,6 @@ import RightDrawer from "../components/RightDrawer";
 import { store } from "../store";
 import ACTIONS from "../actions";
 import { getState } from "../utils/apiClient";
-import AnalysisBox from "../components/AnalysisBox";
 import { Divider } from "@mui/material";
 import ReplayBox from "../components/ReplayBox";
 import DiceDisplay from "../components/DiceDisplay";
@@ -84,8 +83,6 @@ function ReplayScreen() {
       <ZoomableBoard replayMode={true} />
       <LeftDrawer />
       <RightDrawer>
-        <AnalysisBox stateIndex={stateIndex}/>
-        <Divider />
         <DiceDisplay roll={displayRoll} />
         <Divider />
         <ReplayBox

@@ -8,9 +8,38 @@ import type {
   PlayYearOfPlentyAction,
   MoveRobberAction,
   ResourceCard,
+  TradeOfferVector,
+  ActiveTradeVector,
+  TradeConfirmVector,
+  Color,
 } from "./api.types";
 import type { GameState } from "./api.types";
 import { colorLabel, resourceLabel } from "./i18n";
+
+const RESOURCE_ORDER: ResourceCard[] = [
+  "WOOD",
+  "BRICK",
+  "SHEEP",
+  "WHEAT",
+  "ORE",
+];
+
+function formatTradeBundle(counts: number[]): string {
+  const entries = counts
+    .map((count, index) =>
+      count > 0 ? `${resourceLabel(RESOURCE_ORDER[index])}×${count}` : null
+    )
+    .filter(Boolean);
+  return entries.length > 0 ? entries.join(" + ") : "なし";
+}
+
+function describeDomesticTrade(
+  vector: TradeOfferVector | ActiveTradeVector | TradeConfirmVector
+): string {
+  const offer = vector.slice(0, 5) as number[];
+  const request = vector.slice(5, 10) as number[];
+  return `${formatTradeBundle(offer)} ⇄ ${formatTradeBundle(request)}`;
+}
 
 export function humanizeActionRecord(
   gameState: GameState,
@@ -92,6 +121,21 @@ export function humanizeActionRecord(
       const label = humanizeTradeAction(action as MaritimeTradeAction);
       return `${player}が交易：${label}`;
     }
+    case "OFFER_TRADE": {
+      const label = describeDomesticTrade(action[2] as TradeOfferVector);
+      return `${player}が交渉を提案（${label}）`;
+    }
+    case "ACCEPT_TRADE":
+      return `${player}が交渉に応じました`;
+    case "REJECT_TRADE":
+      return `${player}が交渉を断りました`;
+    case "CONFIRM_TRADE": {
+      const payload = action[2] as TradeConfirmVector;
+      const partner = payload[10] as Color;
+      return `${player}が${colorLabel(partner)}との交渉を成立させました`;
+    }
+    case "CANCEL_TRADE":
+      return `${player}が交渉を取り消しました`;
     case "END_TURN":
       return `${player}がターンを終了しました`;
     default:

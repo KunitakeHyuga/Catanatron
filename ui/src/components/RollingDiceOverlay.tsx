@@ -15,7 +15,7 @@ type RollingDiceOverlayProps = {
 export default function RollingDiceOverlay({
   roll,
   visible,
-  duration = 3500,
+  duration = 2000,
   onComplete,
   currentTurnLabel,
   currentColorClass,

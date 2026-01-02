@@ -5,9 +5,14 @@
   background: rgba(9, 9, 9, 0.35);
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 
-  h3 {
-    margin: 0 0 8px;
+  .collapsible-toggle {
+    margin-bottom: 8px;
+  }
+
+  .build-cost-title {
     font-size: 1rem;
     letter-spacing: 0.05em;
   }

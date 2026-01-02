@@ -44,6 +44,8 @@ type BoardProps = {
   show: boolean;
   isMovingRobber: boolean;
   fitContainer?: boolean;
+  recentNodeId?: number | null;
+  recentEdgeId?: EdgeId | null;
 }
 
 export default function Board({
@@ -60,6 +62,8 @@ export default function Board({
   show,
   isMovingRobber,
   fitContainer = false,
+  recentNodeId = null,
+  recentEdgeId = null,
 }: BoardProps) {
   // TODO: Keep in sync with CSS
   const containerHeight = fitContainer ? height : height - 144 - 38 - 40;
@@ -92,6 +96,7 @@ export default function Board({
         building={building}
         color={color}
         flashing={!replayMode && !!nodeActions && id in nodeActions}
+        recentlyBuilt={recentNodeId === id}
         onClick={buildOnNodeClick(
           id,
           nodeActions ? nodeActions[id] : undefined
@@ -110,6 +115,7 @@ export default function Board({
         direction={direction}
         color={color}
         flashing={!!edgeActions && toEdgeId(id) in edgeActions}
+        recentlyBuilt={recentEdgeId === toEdgeId(id)}
         onClick={buildOnEdgeClick(id, edgeActions ? edgeActions[toEdgeId(id)]: undefined)}
       />
     )

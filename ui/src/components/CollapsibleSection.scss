@@ -1,0 +1,40 @@
+.collapsible-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.collapsible-toggle {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.collapsible-title {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.collapsible-icon {
+  font-size: 0.85rem;
+  justify-self: end;
+}
+
+.collapsible-body {
+  width: 100%;
+}
+
+.collapsible-section.is-collapsed .collapsible-body {
+  display: none;
+}

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import cn from "classnames";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Divider from "@mui/material/Divider";
@@ -12,6 +12,7 @@ import ACTIONS from "../actions";
 import { playerKey } from "../utils/stateUtils";
 import { type Color, type GameState } from "../utils/api.types";
 import { isTabOrShift, type InteractionEvent } from "../utils/events";
+import CollapsibleSection from "./CollapsibleSection";
 
 import "./LeftDrawer.scss";
 
@@ -27,6 +28,35 @@ function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentPro
   gameState.colors.forEach((color) => {
     playerKeysByColor.set(color, playerKey(gameState, color));
   });
+  const prevRecordCountRef = useRef(gameState.action_records.length);
+  const [highlightCount, setHighlightCount] = useState(0);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const prevCount = prevRecordCountRef.current;
+    const currentCount = gameState.action_records.length;
+    if (currentCount > prevCount) {
+      setHighlightCount(currentCount - prevCount);
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightCount(0);
+        highlightTimeoutRef.current = null;
+      }, 2500);
+    } else if (currentCount < prevCount) {
+      setHighlightCount(0);
+    }
+    prevRecordCountRef.current = currentCount;
+  }, [gameState.action_records.length]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const armyLeaders = new Set<Color>(
     gameState.colors.filter((color) => {
@@ -80,19 +110,29 @@ function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentPro
   return (
     <>
       {playerSections}
-      <div className="log">
-        {gameState.action_records
-          .slice()
-          .reverse()
-          .map((actionRecord, i) => (
-            <div
-              key={i}
-              className={cn("action foreground", actionRecord[0][0])}
-            >
-              {humanizeActionRecord(gameState, actionRecord)}
-            </div>
-          ))}
-      </div>
+      <CollapsibleSection
+        className="log-section"
+        title={<span className="log-title">行動履歴</span>}
+      >
+        <div className="log">
+          {gameState.action_records
+            .slice()
+            .reverse()
+            .map((actionRecord, index) => {
+              const isHighlighted = highlightCount > 0 && index < highlightCount;
+              return (
+                <div
+                  key={`${actionRecord[0][0]}-${index}`}
+                  className={cn("action foreground", actionRecord[0][0], {
+                    "log-highlight": isHighlighted,
+                  })}
+                >
+                  {humanizeActionRecord(gameState, actionRecord)}
+                </div>
+              );
+            })}
+        </div>
+      </CollapsibleSection>
     </>
   );
 }

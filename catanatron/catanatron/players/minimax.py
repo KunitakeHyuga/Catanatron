@@ -9,10 +9,19 @@ from catanatron.players.value import (
     DEFAULT_WEIGHTS,
     get_value_fn,
 )
+from catanatron.models.enums import ActionType, RESOURCES
+from catanatron.state_functions import player_key
 
 
 ALPHABETA_DEFAULT_DEPTH = 2
 MAX_SEARCH_TIME_SECS = 20
+RESOURCE_BASE_VALUES = {
+    "WOOD": 1.0,
+    "BRICK": 1.0,
+    "SHEEP": 0.9,
+    "WHEAT": 1.15,
+    "ORE": 1.3,
+}
 
 
 class AlphaBetaPlayer(Player):
@@ -52,10 +61,102 @@ class AlphaBetaPlayer(Player):
             return list_prunned_actions(game)
         return game.playable_actions
 
+    def _evaluate_trade_offer(self, action, game, as_initiator: bool):
+        offer = action.value[:5]
+        request = action.value[5:10]
+        gains = 0.0
+        costs = 0.0
+        for idx, resource in enumerate(RESOURCES):
+            value = RESOURCE_BASE_VALUES[resource]
+            if as_initiator:
+                gains += request[idx] * value
+                costs += offer[idx] * value
+            else:
+                gains += offer[idx] * value
+                costs += request[idx] * value
+
+        net = gains - costs
+        key = player_key(game.state, self.color)
+        for idx, resource in enumerate(RESOURCES):
+            count = game.state.player_state.get(f"{key}_{resource}_IN_HAND", 0)
+            if as_initiator:
+                if request[idx] > 0 and count == 0:
+                    net += 0.25 * RESOURCE_BASE_VALUES[resource]
+                if offer[idx] > 0 and count <= offer[idx]:
+                    net -= 0.35 * RESOURCE_BASE_VALUES[resource]
+            else:
+                if offer[idx] > 0 and count == 0:
+                    net += 0.3 * RESOURCE_BASE_VALUES[resource]
+                if request[idx] > 0 and count <= request[idx]:
+                    net -= 0.4 * RESOURCE_BASE_VALUES[resource]
+
+        net += random.uniform(-0.1, 0.1)
+        return net
+
+    def _pick_trade_response(self, actions, game):
+        trade_response_types = {
+            ActionType.ACCEPT_TRADE,
+            ActionType.REJECT_TRADE,
+            ActionType.CONFIRM_TRADE,
+            ActionType.CANCEL_TRADE,
+        }
+        if not actions:
+            return None
+        if not all(action.action_type in trade_response_types for action in actions):
+            return None
+        reject_action = next(
+            (action for action in actions if action.action_type == ActionType.REJECT_TRADE),
+            None,
+        )
+        cancel_action = next(
+            (action for action in actions if action.action_type == ActionType.CANCEL_TRADE),
+            None,
+        )
+
+        accept_candidates = [
+            action for action in actions if action.action_type == ActionType.ACCEPT_TRADE
+        ]
+        if accept_candidates:
+            scored = [
+                (self._evaluate_trade_offer(action, game, as_initiator=False), action)
+                for action in accept_candidates
+            ]
+            scored.sort(key=lambda pair: pair[0], reverse=True)
+            best_score, best_action = scored[0]
+            if best_score >= -0.2 or reject_action is None:
+                return best_action
+            return reject_action
+
+        confirm_candidates = [
+            action for action in actions if action.action_type == ActionType.CONFIRM_TRADE
+        ]
+        if confirm_candidates:
+            scored = [
+                (self._evaluate_trade_offer(action, game, as_initiator=True), action)
+                for action in confirm_candidates
+            ]
+            scored.sort(key=lambda pair: pair[0], reverse=True)
+            best_score, best_action = scored[0]
+            if best_score >= -0.2:
+                return best_action
+            if cancel_action is not None:
+                return cancel_action
+            return best_action
+
+        if reject_action is not None:
+            return reject_action
+        if cancel_action is not None:
+            return cancel_action
+        return actions[0]
+
     def decide(self, game: Game, playable_actions):
         actions = self.get_actions(game)
         if len(actions) == 1:
             return actions[0]
+
+        trade_response = self._pick_trade_response(actions, game)
+        if trade_response is not None:
+            return trade_response
 
         if self.epsilon is not None and random.random() < self.epsilon:
             return random.choice(playable_actions)

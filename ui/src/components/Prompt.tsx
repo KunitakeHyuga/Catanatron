@@ -19,6 +19,8 @@ const PROMPT_LABELS: Record<string, string> = {
   PLAY_YEAR_OF_PLENTY: "豊穣の年カードを使ってください",
   MOVE_ROBBER: "盗賊を移動してください",
   MARITIME_TRADE: "港で交易してください",
+  DECIDE_TRADE: "交渉の提案に回答してください",
+  DECIDE_ACCEPTEES: "誰と交渉成立させるか選んでください",
   END_TURN: "ターンを終了してください",
 };
 

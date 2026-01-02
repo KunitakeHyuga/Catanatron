@@ -19,14 +19,44 @@ $dark-divider: rgb(0 0 0 / 80%);
   .log {
     overflow-y: auto;
     font-size: 0.8rem;
-
-    // To ensure always clipped towards bottom
-    display: flex;
-    flex-direction: column-reverse;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     scrollbar-width: thin;
     scrollbar-color: #454545 variables.$dark-gray;
     .action {
       padding: variables.$sm-gutter;
+      word-break: inherit;
+      overflow-wrap: inherit;
     }
+
+    .log-highlight {
+      animation: log-entry-flash 2.2s ease-out;
+      border-radius: 4px;
+    }
+  }
+
+  .log-section {
+    border-top: 1px solid $dark-divider;
+
+    .collapsible-toggle {
+      padding: variables.$sm-gutter;
+      color: #fff;
+    }
+
+    .collapsible-body {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+@keyframes log-entry-flash {
+  0% {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  30% {
+    background: rgba(255, 255, 255, 0.18);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.02);
   }
 }

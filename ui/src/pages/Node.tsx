@@ -21,6 +21,7 @@ type NodeProps = {
   building: Building | null;
   color: Color | null;
   flashing: boolean;
+  recentlyBuilt: boolean;
   onClick: React.MouseEventHandler<HTMLDivElement>;
 };
 
@@ -32,6 +33,7 @@ export default function Node({
   building,
   color,
   flashing,
+  recentlyBuilt,
   onClick,
 }: NodeProps) {
   const [centerX, centerY] = center;
@@ -56,6 +58,7 @@ export default function Node({
     >
       {color && <Building building={building} color={color} />}
       {flashing && <div className="pulse"></div>}
+      {recentlyBuilt && <div className="build-highlight"></div>}
       {/* {id} */}
     </div>
   );

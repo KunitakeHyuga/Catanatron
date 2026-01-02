@@ -29,6 +29,11 @@ def is_valid_action(playable_actions, state: State, action: Action) -> bool:
             and player_has_rolled(state, action.color)
             and is_valid_trade(action.value)
         )
+    elif action.action_type == ActionType.CANCEL_TRADE:
+        return (
+            state.is_resolving_trade
+            and state.colors[state.current_turn_index] == action.color
+        )
 
     return action in playable_actions
 

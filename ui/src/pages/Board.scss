@@ -173,3 +173,41 @@
   width: 75%;
   height: 75%;
 }
+
+.build-highlight {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  animation: build-glow 1.4s ease-out forwards;
+}
+
+.node .build-highlight {
+  width: 110%;
+  height: 110%;
+}
+
+.edge .build-highlight {
+  width: 105%;
+  height: 150%;
+  border-radius: 6px;
+}
+
+@keyframes build-glow {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  70% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.45);
+  }
+}

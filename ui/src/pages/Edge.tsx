@@ -19,6 +19,7 @@ type EdgeProps = {
   direction: Direction;
   color: Color | null;
   flashing: boolean;
+  recentlyBuilt: boolean;
   onClick: React.MouseEventHandler;
 };
 
@@ -30,6 +31,7 @@ export default function Edge({
   direction,
   color,
   flashing,
+  recentlyBuilt,
   onClick,
 }: EdgeProps) {
   const [centerX, centerY] = center;
@@ -50,6 +52,7 @@ export default function Edge({
     >
       {color && <Road color={color} />}
       {flashing && <div className="pulse"></div>}
+      {recentlyBuilt && <div className="build-highlight"></div>}
     </div>
   );
 }

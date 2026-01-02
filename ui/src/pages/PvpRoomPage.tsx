@@ -37,6 +37,7 @@ import {
 } from "../utils/apiClient";
 import type { Color, GameAction, GameState } from "../utils/api.types";
 import { useSnackbar } from "notistack";
+import TradePanel from "../components/TradePanel";
 
 import "./PvpRoomPage.scss";
 
@@ -466,6 +467,11 @@ export default function PvpRoomPage() {
                 ロビーに戻る
               </Button>
             </div>
+            <Divider />
+            <TradePanel
+              actionExecutor={submitAction}
+              playerColorOverride={seatColor}
+            />
             <Divider />
             <DiceDisplay roll={displayRoll} />
             <Divider />
