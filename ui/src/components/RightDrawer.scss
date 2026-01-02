@@ -21,6 +21,10 @@ $dark-divider: rgb(0 0 0 / 80%);
     width: min(340px, 90vw);
     background: variables.$dark-gray;
     color: white;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .MuiButton-root {
