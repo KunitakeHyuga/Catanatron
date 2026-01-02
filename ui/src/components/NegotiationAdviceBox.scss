@@ -1,4 +1,18 @@
 .negotiation-box {
+  .analysis-title-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 1.1rem;
+  }
+
+  .analysis-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 10px 0 8px;
+  }
+
   .advice-placeholder {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;

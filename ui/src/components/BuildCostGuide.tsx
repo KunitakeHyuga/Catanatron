@@ -1,5 +1,6 @@
 import { resourceLabel } from "../utils/i18n";
 import type { ResourceCard } from "../utils/api.types";
+import ConstructionIcon from "@mui/icons-material/Construction";
 
 import "./BuildCostGuide.scss";
 import CollapsibleSection from "./CollapsibleSection";
@@ -55,7 +56,12 @@ export default function BuildCostGuide() {
   return (
     <CollapsibleSection
       className="build-cost-guide"
-      title={<span className="build-cost-title">建設コスト早見表</span>}
+      title={
+        <span className="build-cost-title">
+          <ConstructionIcon fontSize="small" />
+          <span>建設コスト早見表</span>
+        </span>
+      }
     >
       <div className="cost-list">
         {BUILD_COSTS.map((entry) => (

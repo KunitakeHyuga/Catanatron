@@ -3,6 +3,7 @@ import cn from "classnames";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
+import HistoryIcon from "@mui/icons-material/History";
 
 import Hidden from "./Hidden";
 import PlayerStateBox from "./PlayerStateBox";
@@ -112,7 +113,12 @@ function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentPro
       {playerSections}
       <CollapsibleSection
         className="log-section"
-        title={<span className="log-title">行動履歴</span>}
+        title={
+          <span className="log-title">
+            <HistoryIcon fontSize="small" />
+            <span>行動履歴</span>
+          </span>
+        }
       >
         <div className="log">
           {gameState.action_records

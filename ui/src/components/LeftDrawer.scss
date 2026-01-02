@@ -41,6 +41,23 @@ $dark-divider: rgb(0 0 0 / 80%);
     .collapsible-toggle {
       padding: variables.$sm-gutter;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: calc(variables.$sm-gutter + 10px);
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      .collapsible-icon {
+        right: variables.$sm-gutter;
+      }
+
+      .log-title span {
+        display: inline-block;
+        margin-left: 2px;
+      }
     }
 
     .collapsible-body {

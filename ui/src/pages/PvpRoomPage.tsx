@@ -38,6 +38,7 @@ import {
 import type { Color, GameAction, GameState } from "../utils/api.types";
 import { useSnackbar } from "notistack";
 import TradePanel from "../components/TradePanel";
+import NegotiationAdviceBox from "../components/NegotiationAdviceBox";
 
 import "./PvpRoomPage.scss";
 
@@ -473,6 +474,16 @@ export default function PvpRoomPage() {
               playerColorOverride={seatColor}
             />
             <Divider />
+            {roomStatus.game_id && (
+              <>
+                <NegotiationAdviceBox
+                  stateIndex={"latest"}
+                  gameIdOverride={roomStatus.game_id}
+                  gameStateOverride={state.gameState ?? null}
+                />
+                <Divider />
+              </>
+            )}
             <DiceDisplay roll={displayRoll} />
             <Divider />
             <BuildCostGuide />

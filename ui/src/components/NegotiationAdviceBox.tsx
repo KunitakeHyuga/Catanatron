@@ -2,9 +2,15 @@ import { useContext, useState } from "react";
 import { useParams } from "react-router";
 import { Button, CircularProgress } from "@mui/material";
 import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 
-import { requestNegotiationAdvice, type StateIndex } from "../utils/apiClient";
+import {
+  requestNegotiationAdvice,
+  type StateIndex,
+} from "../utils/apiClient";
 import { store } from "../store";
+import type { GameState } from "../utils/api.types";
+import CollapsibleSection from "./CollapsibleSection";
 
 import "./AnalysisBox.scss";
 import "./NegotiationAdviceBox.scss";
@@ -45,19 +51,25 @@ function localizeAdviceText(text: string): string {
 
 type NegotiationAdviceBoxProps = {
   stateIndex: StateIndex;
+  gameIdOverride?: string | null;
+  gameStateOverride?: GameState | null;
 };
 
 export default function NegotiationAdviceBox({
   stateIndex,
+  gameIdOverride = null,
+  gameStateOverride = null,
 }: NegotiationAdviceBoxProps) {
-  const { gameId } = useParams();
+  const { gameId: routeGameId } = useParams();
   const { state } = useContext(store);
   const [advice, setAdvice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const gameId = gameIdOverride ?? routeGameId ?? undefined;
+  const currentGameState = gameStateOverride ?? state.gameState;
 
   const handleAdviceRequest = async () => {
-    if (!gameId || !state.gameState) {
+    if (!gameId || !currentGameState) {
       return;
     }
 
@@ -85,12 +97,21 @@ export default function NegotiationAdviceBox({
     }
   };
 
-  const buttonDisabled = loading || !gameId || !state.gameState;
+  const buttonDisabled = loading || !gameId || !currentGameState;
+
+  const adviceTitle = (
+    <span className="analysis-title-text">
+      <PsychologyIcon fontSize="small" />
+      <span>交渉支援AIエージェント</span>
+    </span>
+  );
 
   return (
-    <div className="analysis-box negotiation-box">
-      <div className="analysis-header">
-        <h3>交渉アドバイス</h3>
+    <CollapsibleSection
+      className="analysis-box negotiation-box"
+      title={adviceTitle}
+    >
+      <div className="analysis-actions">
         <Button
           variant="contained"
           color="primary"
@@ -111,6 +132,6 @@ export default function NegotiationAdviceBox({
           盤面と直近の行動ログをChatGPTに送り、トレードや交渉のヒントを取得します。
         </p>
       )}
-    </div>
+    </CollapsibleSection>
   );
 }
