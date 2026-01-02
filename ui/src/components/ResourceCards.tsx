@@ -120,7 +120,7 @@ export default function ResourceCards({
     devTimers.current[key] = setTimeout(() => {
       setDevHighlights((prev) => ({ ...prev, [key]: false }));
       devTimers.current[key] = null;
-    }, 3300);
+    }, 3200);
   };
 
   useEffect(() => {

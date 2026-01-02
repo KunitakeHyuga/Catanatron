@@ -233,7 +233,7 @@ export default function ZoomableBoard({
       setRecentNodeId(null);
       setRecentEdgeId(null);
       highlightTimeoutRef.current = null;
-    }, 1600);
+    }, 3200);
   }, [gameState, replayMode]);
 
   useEffect(() => {

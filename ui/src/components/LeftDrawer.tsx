@@ -43,7 +43,7 @@ function DrawerContent({ gameState, playerNames, viewerColor }: DrawerContentPro
       highlightTimeoutRef.current = setTimeout(() => {
         setHighlightCount(0);
         highlightTimeoutRef.current = null;
-      }, 2500);
+      }, 3200);
     } else if (currentCount < prevCount) {
       setHighlightCount(0);
     }
