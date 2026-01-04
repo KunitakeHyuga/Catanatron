@@ -72,8 +72,8 @@
 .tile.robber-highlight::after {
   content: "";
   position: absolute;
-  inset: 8%;
-  border-radius: 16px;
+  inset: 25%;
+  border-radius: 12px;
   border: 2px solid rgba(255, 227, 130, 0.95);
   box-shadow: 0 0 18px rgba(255, 214, 102, 0.8);
   pointer-events: none;
