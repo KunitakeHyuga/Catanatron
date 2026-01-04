@@ -70,14 +70,26 @@ function TradeSummaryView({ trade }: { trade: TradeSummary }) {
         {trade.acceptees.length === 0 ? (
           <span className="trade-acceptance waiting">回答待ち</span>
         ) : (
-          trade.acceptees.map(({ color, accepted }) => (
-            <span
-              key={color}
-              className={`trade-acceptance ${accepted ? "accepted" : "waiting"}`}
-            >
-              {colorLabel(color)}: {accepted ? "承諾" : "回答待ち"}
-            </span>
-          ))
+          trade.acceptees.map(({ color, accepted, responded }) => {
+            const statusLabel = accepted
+              ? "承諾"
+              : responded
+              ? "拒否"
+              : "回答待ち";
+            const statusClass = accepted
+              ? "accepted"
+              : responded
+              ? "rejected"
+              : "waiting";
+            return (
+              <span
+                key={color}
+                className={`trade-acceptance ${statusClass}`}
+              >
+                {colorLabel(color)}: {statusLabel}
+              </span>
+            );
+          })
         )}
       </div>
     </div>
@@ -416,9 +428,7 @@ export default function TradePanel({
           </div>
           {mustCancelDueToRejections && (
             <p className="trade-reject-note">
-              {rejectedColors
-                .map((color) => colorLabel(color))
-                .join("・")}
+              {rejectedColors.map((color) => colorLabel(color)).join("・")}
               が交渉を断ったため、成立はできません。交渉を取り下げてください。
             </p>
           )}
@@ -438,9 +448,7 @@ export default function TradePanel({
           </p>
           {rejectedColors.length > 0 && (
             <p className="trade-reject-note">
-              {rejectedColors
-                .map((color) => colorLabel(color))
-                .join("・")}
+              {rejectedColors.map((color) => colorLabel(color)).join("・")}
               が交渉を断りました。
             </p>
           )}
