@@ -47,6 +47,8 @@ export default function useSoundEffects(
           actionType === "MARITIME_TRADE"
         ) {
           playSound("tradeStart");
+        } else if (actionType === "MOVE_ROBBER") {
+          playSound("robber");
         } else if (actionType === "END_TURN") {
           playSound("turnEnd");
         }

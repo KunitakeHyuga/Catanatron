@@ -13,7 +13,8 @@ type SoundEffect =
   | "tradeSuccess"
   | "tradeFail"
   | "tradeStart"
-  | "turnEnd";
+  | "turnEnd"
+  | "robber";
 
 const SOUND_LIBRARY: Record<SoundEffect, ToneStep[]> = {
   dice: [
@@ -45,6 +46,11 @@ const SOUND_LIBRARY: Record<SoundEffect, ToneStep[]> = {
   turnEnd: [
     { frequency: 280, duration: 0.12, gain: 0.22, type: "triangle" },
     { frequency: 200, duration: 0.16, delay: 0.09, gain: 0.2, type: "sine" },
+  ],
+  robber: [
+    { frequency: 150, duration: 0.18, gain: 0.22, type: "sawtooth" },
+    { frequency: 110, duration: 0.2, delay: 0.12, gain: 0.24, type: "triangle" },
+    { frequency: 80, duration: 0.25, delay: 0.22, gain: 0.2, type: "sine" },
   ],
 };
 
