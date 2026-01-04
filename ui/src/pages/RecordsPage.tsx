@@ -33,6 +33,27 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   minute: "2-digit",
 });
 
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  ROLL: "ダイス",
+  DISCARD: "資源を捨てる",
+  BUY_DEVELOPMENT_CARD: "開発カード購入",
+  BUILD_SETTLEMENT: "開拓地建設",
+  BUILD_CITY: "都市建設",
+  BUILD_ROAD: "街道建設",
+  PLAY_KNIGHT_CARD: "騎士カード",
+  PLAY_ROAD_BUILDING: "街道建設カード",
+  PLAY_MONOPOLY: "独占カード",
+  PLAY_YEAR_OF_PLENTY: "豊穣の年カード",
+  MOVE_ROBBER: "盗賊移動",
+  MARITIME_TRADE: "海上交易",
+  OFFER_TRADE: "交渉提案",
+  ACCEPT_TRADE: "交渉承諾",
+  REJECT_TRADE: "交渉拒否",
+  CONFIRM_TRADE: "交渉成立",
+  CANCEL_TRADE: "交渉取り下げ",
+  END_TURN: "ターン終了",
+};
+
 type EnrichedRecord = GameRecordSummary & { updated_at_ms: number };
 
 function enrichRemote(records: GameRecordSummary[]): EnrichedRecord[] {
@@ -219,6 +240,43 @@ export default function RecordsPage() {
     }
     return `${seconds.toFixed(1)}秒`;
   };
+
+  const downloadLogCsv = useCallback(() => {
+    if (!gameState || gameState.action_records.length === 0) {
+      return;
+    }
+    const escapeCsv = (value: string | number) => {
+      const stringValue = String(value ?? "");
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    };
+    const rows = gameState.action_records.map((record, index) => {
+      const action = record[0];
+      const turnNumber = index + 1;
+      const actorColor = colorLabel(action[0]);
+      const actionLabel = ACTION_TYPE_LABELS[action[1]] ?? action[1];
+      const detail = humanizeActionRecord(gameState, record);
+      return [turnNumber, actorColor, actionLabel, detail];
+    });
+    const header = ["ターン数", "色", "行動", "詳細"];
+    const csvContent = [header, ...rows]
+      .map((cols) => cols.map(escapeCsv).join(","))
+      .join("\r\n");
+    const csv = "\uFEFF" + csvContent;
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = selectedGameId
+      ? `game-${selectedGameId}-log.csv`
+      : "game-log.csv";
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [gameState, selectedGameId]);
 
   const handleDeleteSelectedGame = useCallback(async () => {
     if (!selectedGameId) {
@@ -454,7 +512,18 @@ export default function RecordsPage() {
                     )}
                   </section>
                   <section className="records-log">
-                    <h2>行動ログ</h2>
+                    <div className="section-header">
+                      <h2>行動ログ</h2>
+                      <button
+                        className="csv-button"
+                        onClick={downloadLogCsv}
+                        disabled={
+                          !gameState || gameState.action_records.length === 0
+                        }
+                      >
+                        CSVダウンロード
+                      </button>
+                    </div>
                     <div className="log-entries">
                       {gameState.action_records
                         .slice()
