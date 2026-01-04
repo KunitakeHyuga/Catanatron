@@ -303,19 +303,17 @@ export default function TradePanel({
       .map(({ color }) => color) ?? [];
   const hasAcceptedPartners = acceptedColors.length > 0;
   const noAcceptanceYet = !hasAcceptedPartners;
-  const hasRejectedPlayers =
-    decidingPartner && currentTrade
-      ? currentTrade.acceptees.some(
-          ({ accepted, color }) => !accepted && color !== currentTrade.offerer_color
-        )
-      : false;
-  const rejectedColors = hasRejectedPlayers
-    ? currentTrade?.acceptees
-        ?.filter(
-          ({ accepted, color }) => !accepted && color !== currentTrade.offerer_color
-        )
-        .map(({ color }) => color as Color) ?? []
-    : [];
+  const rejectedColors =
+    currentTrade?.acceptees
+      ?.filter(({ accepted, responded }) => Boolean(responded) && !accepted)
+      .map(({ color }) => color as Color) ?? [];
+  const waitingColors =
+    currentTrade?.acceptees
+      ?.filter(({ responded }) => !responded)
+      .map(({ color }) => color) ?? [];
+  const hasRejectedPlayers = rejectedColors.length > 0;
+  const mustCancelDueToRejections =
+    hasRejectedPlayers && waitingColors.length === 0 && !hasAcceptedPartners;
   const currentResponderColor =
     currentTrade &&
     gameState.current_prompt === "DECIDE_TRADE" &&
@@ -324,10 +322,6 @@ export default function TradePanel({
       : currentTrade && gameState.current_prompt === "DECIDE_TRADE"
       ? gameState.current_color
       : null;
-  const waitingColors =
-    currentTrade?.acceptees
-      ?.filter(({ accepted }) => !accepted)
-      .map(({ color }) => color) ?? [];
 
   return (
     <CollapsibleSection className="analysis-box trade-panel" title={tradeTitle}>
@@ -346,9 +340,12 @@ export default function TradePanel({
               ) : (
                 <p>まだ誰も交渉に応じていません。各プレイヤーの回答を待っています。</p>
               )}
-              {currentResponderColor && (
+              {waitingColors.length > 0 && (
                 <p className="waiting-note">
-                  現在 {colorLabel(currentResponderColor)} が交渉に応じるか判断しています。
+                  {waitingColors
+                    .map((color) => colorLabel(color as Color))
+                    .join("・")}
+                  の回答を待っています。
                 </p>
               )}
             </div>
@@ -399,7 +396,7 @@ export default function TradePanel({
                   key={String(target)}
                   variant="contained"
                   color="primary"
-                  disabled={pendingAction !== null || hasRejectedPlayers}
+                  disabled={pendingAction !== null || !hasAcceptedPartners}
                   onClick={() => submitAction(action)}
                 >
                   {colorLabel(target)}と成立
@@ -417,7 +414,7 @@ export default function TradePanel({
               </Button>
             )}
           </div>
-          {hasRejectedPlayers && (
+          {mustCancelDueToRejections && (
             <p className="trade-reject-note">
               {rejectedColors
                 .map((color) => colorLabel(color))

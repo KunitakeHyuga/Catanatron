@@ -79,16 +79,23 @@ class GameEncoder(json.JSONEncoder):
             return None
         offerer_index = offerer_index % num_players
         offerer_color = state.colors[offerer_index]
-        acceptees = [
-            {
-                "color": self.default(color),
-                "accepted": accepted,
-            }
-            for idx, (color, accepted) in enumerate(
-                zip(state.colors, getattr(state, "acceptees", ()))
+        trade_responses = getattr(
+            state, "trade_responses", tuple(False for _ in state.colors)
+        )
+        acceptees = []
+        raw_acceptees = getattr(state, "acceptees", ())
+        for idx, color in enumerate(state.colors):
+            if idx == offerer_index:
+                continue
+            accepted = raw_acceptees[idx] if idx < len(raw_acceptees) else False
+            responded = trade_responses[idx] if idx < len(trade_responses) else False
+            acceptees.append(
+                {
+                    "color": self.default(color),
+                    "accepted": accepted,
+                    "responded": responded,
+                }
             )
-            if idx != offerer_index
-        ]
         return {
             "offerer_color": self.default(offerer_color),
             "offer": offer_counts,

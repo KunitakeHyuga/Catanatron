@@ -134,6 +134,7 @@ class State:
             self.is_resolving_trade = False
             self.current_trade: Tuple = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
             self.acceptees = tuple(False for _ in self.colors)
+            self.trade_responses = tuple(False for _ in self.colors)
 
     def current_player(self):
         """Helper for accessing Player instance who should decide next"""
@@ -185,5 +186,7 @@ class State:
         state_copy.is_resolving_trade = self.is_resolving_trade
         state_copy.current_trade = self.current_trade
         state_copy.acceptees = self.acceptees
-
+        state_copy.trade_responses = getattr(
+            self, "trade_responses", tuple(False for _ in self.colors)
+        )
         return state_copy

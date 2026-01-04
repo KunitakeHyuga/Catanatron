@@ -106,11 +106,11 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       let nextState = gameState;
       try {
         while (!cancelled && isBotTurn(nextState)) {
-          const isStandardTurn = nextState.current_prompt === "PLAY_TURN";
           const shouldDelayBeforeAction =
             hasHumanPlayer &&
             !nextState.is_initial_build_phase &&
-            isStandardTurn;
+            (nextState.current_prompt === "PLAY_TURN" ||
+              nextState.current_prompt === "MOVE_ROBBER");
           setIsBotThinking(shouldDelayBeforeAction);
 
           if (shouldDelayBeforeAction) {

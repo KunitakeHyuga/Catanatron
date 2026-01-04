@@ -430,6 +430,7 @@ def apply_maritime_trade(state: State, action: Action):
 def apply_offer_trade(state: State, action: Action):
     state.is_resolving_trade = True
     state.current_trade = (*action.value, state.current_turn_index)
+    state.trade_responses = tuple(False for _ in state.colors)
 
     # start from the offerer, then advance to the first responder in seating order
     state.current_player_index = state.current_turn_index
@@ -451,6 +452,7 @@ def apply_accept_trade(state: State, action: Action):
     new_acceptess = list(state.acceptees)
     new_acceptess[index] = True  # type: ignore
     state.acceptees = tuple(new_acceptess)
+    _set_trade_response(state, index)
 
     # immediately give control back to offering player to choose acceptee
     state.current_player_index = state.current_turn_index
@@ -460,6 +462,8 @@ def apply_accept_trade(state: State, action: Action):
 
 
 def apply_reject_trade(state: State, action: Action):
+    responder_index = state.colors.index(action.color)
+    _set_trade_response(state, responder_index)
     next_responder = _advance_trade_responder(state)
     if next_responder is None:
         # if no acceptees at this point, go back to PLAY_TURN
@@ -581,6 +585,7 @@ def reset_trading_state(state):
     state.is_resolving_trade = False
     state.current_trade = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     state.acceptees = tuple(False for _ in state.colors)
+    state.trade_responses = tuple(False for _ in state.colors)
 
 
 def _get_trade_offerer_index(state: State) -> int:
@@ -596,11 +601,28 @@ def _advance_trade_responder(state: State) -> Optional[int]:
     if num_players <= 1:
         return None
     offerer_index = _get_trade_offerer_index(state)
+    responses = list(
+        getattr(state, "trade_responses", tuple(False for _ in state.colors))
+    )
+    if len(responses) < num_players:
+        responses.extend([False] * (num_players - len(responses)))
     current_index = state.current_player_index
     for _ in range(1, num_players):
         candidate = (current_index + 1) % num_players
         current_index = candidate
         if candidate == offerer_index:
-            return None
-        return candidate
+            continue
+        if not responses[candidate]:
+            return candidate
     return None
+    return None
+
+
+def _set_trade_response(state: State, index: int):
+    responses = list(
+        getattr(state, "trade_responses", tuple(False for _ in state.colors))
+    )
+    if len(responses) < len(state.colors):
+        responses.extend([False] * (len(state.colors) - len(responses)))
+    responses[index] = True
+    state.trade_responses = tuple(responses)

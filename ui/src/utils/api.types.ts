@@ -177,5 +177,5 @@ export type TradeSummary = {
   offerer_color: Color;
   offer: ResourceCounts;
   request: ResourceCounts;
-  acceptees: Array<{ color: Color; accepted: boolean }>;
+  acceptees: Array<{ color: Color; accepted: boolean; responded?: boolean }>;
 };
