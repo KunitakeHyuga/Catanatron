@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { GridLoader } from "react-spinners";
 import type { AxiosError } from "axios";
@@ -24,6 +24,7 @@ import {
   removeLocalRecord,
 } from "../utils/localRecords";
 import { calculateNegotiationStats } from "../utils/negotiationStats";
+import { loadHtmlToImage } from "../utils/htmlToImageLoader";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   year: "numeric",
@@ -118,6 +119,8 @@ export default function RecordsPage() {
   const [error, setError] = useState<string | null>(null);
   const [localAvailable, setLocalAvailable] = useState<boolean>(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [boardImagePending, setBoardImagePending] = useState(false);
+  const boardSnapshotRef = useRef<HTMLDivElement | null>(null);
 
   const loadGames = useCallback(async () => {
     const localRecords = getLocalRecords();
@@ -295,6 +298,40 @@ export default function RecordsPage() {
     URL.revokeObjectURL(url);
   }, [gameState, selectedGameId]);
 
+  const downloadBoardJpeg = useCallback(async () => {
+    if (!gameState || !boardSnapshotRef.current) {
+      return;
+    }
+    try {
+      setBoardImagePending(true);
+      const element = boardSnapshotRef.current;
+      const backgroundColor =
+        window.getComputedStyle(element).getPropertyValue("background-color") ||
+        "#0b1628";
+      const htmlToImage = await loadHtmlToImage();
+      const dataUrl = await htmlToImage.toJpeg(element, {
+        quality: 0.95,
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor,
+      });
+      const filename = selectedGameId
+        ? `game-${selectedGameId}-board.jpeg`
+        : "catan-board.jpeg";
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+      setError("盤面画像をダウンロードできませんでした。");
+    } finally {
+      setBoardImagePending(false);
+    }
+  }, [gameState, selectedGameId]);
+
   const handleDeleteSelectedGame = useCallback(async () => {
     if (!selectedGameId) {
       return;
@@ -410,8 +447,17 @@ export default function RecordsPage() {
               <section className="records-detail-body">
                 <div className="records-main">
                   <section className="records-board">
-                    <h2>最終盤面</h2>
-                    <BoardSnapshot gameState={gameState} />
+                    <div className="section-header">
+                      <h2>最終盤面</h2>
+                      <button
+                        className="jpeg-button"
+                        onClick={downloadBoardJpeg}
+                        disabled={boardImagePending}
+                      >
+                        {boardImagePending ? "作成中..." : "JPEGダウンロード"}
+                      </button>
+                    </div>
+                    <BoardSnapshot ref={boardSnapshotRef} gameState={gameState} />
                   </section>
                   <section className="records-players">
                     <h2>所持・利用カード</h2>
