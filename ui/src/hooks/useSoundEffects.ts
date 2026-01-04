@@ -42,7 +42,10 @@ export default function useSoundEffects(
           playSound("tradeSuccess");
         } else if (actionType === "CANCEL_TRADE") {
           playSound("tradeFail");
-        } else if (actionType === "OFFER_TRADE") {
+        } else if (
+          actionType === "OFFER_TRADE" ||
+          actionType === "MARITIME_TRADE"
+        ) {
           playSound("tradeStart");
         } else if (actionType === "END_TURN") {
           playSound("turnEnd");
