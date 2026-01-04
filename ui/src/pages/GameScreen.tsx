@@ -30,7 +30,6 @@ import useSoundEffects from "../hooks/useSoundEffects";
 import { resumeAudioContext } from "../utils/audioManager";
 
 const HUMAN_BOT_DELAY_MS = 4000;
-const DICE_ROLL_DELAY_MS = 4000;
 
 function GameScreen({ replayMode }: { replayMode: boolean }) {
   const { gameId, stateIndex } = useParams();
@@ -39,6 +38,9 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   const [isBotThinking, setIsBotThinking] = useState(false);
   const botDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botProcessingRef = useRef(false);
+  const pendingBotCheckRef = useRef(false);
+  const botProcessingCancelledRef = useRef(false);
+  const latestGameStateRef = useRef<GameState | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Load game state
@@ -66,7 +68,6 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   }, []);
 
   const gameState = state.gameState;
-  const currentStateIndex = gameState?.state_index;
   const isBotTurn = (state: GameState) =>
     state.bot_colors.includes(state.current_color) && !state.winning_color;
   const hasHumanPlayer =
@@ -77,21 +78,33 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
         )
       : false);
 
-  // Maybe kick off next query?
-  useEffect(() => {
-    if (!gameState || replayMode || !gameId) {
-      setIsBotThinking(false);
+  const updateBotThinking = useCallback(
+    (value: boolean) => {
+      if (!isUnmountedRef.current) {
+        setIsBotThinking(value);
+      }
+    },
+    []
+  );
+
+  const processBotActions = useCallback(() => {
+    const startingState = latestGameStateRef.current;
+    if (!startingState || replayMode || !gameId) {
       return;
     }
-    if (!isBotTurn(gameState) || botProcessingRef.current) {
+    if (!isBotTurn(startingState)) {
+      return;
+    }
+    if (botProcessingRef.current) {
+      pendingBotCheckRef.current = true;
       return;
     }
 
     botProcessingRef.current = true;
-    let cancelled = false;
+    pendingBotCheckRef.current = false;
 
     const wait = async (ms: number) => {
-      if (ms <= 0 || cancelled) {
+      if (ms <= 0 || botProcessingCancelledRef.current) {
         return;
       }
       await new Promise<void>((resolve) => {
@@ -102,24 +115,31 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       });
     };
 
-    const processBots = async () => {
-      let nextState = gameState;
+    const run = async () => {
+      let nextState: GameState | null = startingState;
       try {
-        while (!cancelled && isBotTurn(nextState)) {
+        while (
+          nextState &&
+          !botProcessingCancelledRef.current &&
+          isBotTurn(nextState)
+        ) {
           const shouldDelayBeforeAction =
             hasHumanPlayer &&
             !nextState.is_initial_build_phase &&
             (nextState.current_prompt === "PLAY_TURN" ||
               nextState.current_prompt === "MOVE_ROBBER");
-          setIsBotThinking(shouldDelayBeforeAction);
+          updateBotThinking(shouldDelayBeforeAction);
 
           if (shouldDelayBeforeAction) {
             await wait(HUMAN_BOT_DELAY_MS);
+            if (botProcessingCancelledRef.current) {
+              break;
+            }
           }
 
           const updatedState = await postAction(gameId);
 
-          if (cancelled) {
+          if (botProcessingCancelledRef.current) {
             break;
           }
 
@@ -129,6 +149,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
           }
 
           nextState = updatedState;
+          latestGameStateRef.current = updatedState;
         }
       } catch (error) {
         console.error("Failed to process bot action", error);
@@ -137,32 +158,52 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
           clearTimeout(botDelayTimeoutRef.current);
           botDelayTimeoutRef.current = null;
         }
-        setIsBotThinking(false);
+        updateBotThinking(false);
         botProcessingRef.current = false;
+
+        if (
+          !botProcessingCancelledRef.current &&
+          pendingBotCheckRef.current
+        ) {
+          pendingBotCheckRef.current = false;
+          processBotActions();
+        }
       }
     };
 
-    processBots();
+    run();
+  }, [
+    closeSnackbar,
+    dispatch,
+    dispatchSnackbar,
+    enqueueSnackbar,
+    gameId,
+    hasHumanPlayer,
+    replayMode,
+    updateBotThinking,
+  ]);
 
+  useEffect(() => {
+    latestGameStateRef.current = state.gameState;
+    if (!state.gameState || replayMode || !gameId) {
+      updateBotThinking(false);
+      return;
+    }
+    processBotActions();
+  }, [state.gameState, processBotActions, replayMode, gameId, updateBotThinking]);
+
+  useEffect(() => {
+    botProcessingCancelledRef.current = false;
     return () => {
-      cancelled = true;
+      botProcessingCancelledRef.current = true;
       if (botDelayTimeoutRef.current) {
         clearTimeout(botDelayTimeoutRef.current);
         botDelayTimeoutRef.current = null;
       }
-      setIsBotThinking(false);
       botProcessingRef.current = false;
+      pendingBotCheckRef.current = false;
     };
-  }, [
-    gameId,
-    replayMode,
-    currentStateIndex,
-    dispatch,
-    enqueueSnackbar,
-    closeSnackbar,
-    gameState,
-    hasHumanPlayer,
-  ]);
+  }, [gameId]);
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
     useRollDisplay(state.gameState);

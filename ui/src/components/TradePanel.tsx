@@ -55,7 +55,16 @@ function formatCounts(counts: ResourceCounts): string {
   return labels.length > 0 ? labels.join(" + ") : "なし";
 }
 
-function TradeSummaryView({ trade }: { trade: TradeSummary }) {
+type AcceptanceStatus = "waiting" | "accepted" | "rejected";
+type AcceptanceStatusMap = Partial<Record<Color, AcceptanceStatus>>;
+
+function TradeSummaryView({
+  trade,
+  acceptanceStatus,
+}: {
+  trade: TradeSummary;
+  acceptanceStatus: AcceptanceStatusMap;
+}) {
   return (
     <div className="trade-status-card">
       <div className="trade-summary-line">
@@ -70,21 +79,25 @@ function TradeSummaryView({ trade }: { trade: TradeSummary }) {
         {trade.acceptees.length === 0 ? (
           <span className="trade-acceptance waiting">回答待ち</span>
         ) : (
-          trade.acceptees.map(({ color, accepted, responded }) => {
-            const statusLabel = accepted
-              ? "承諾"
-              : responded
-              ? "拒否"
-              : "回答待ち";
-            const statusClass = accepted
-              ? "accepted"
-              : responded
-              ? "rejected"
-              : "waiting";
+          trade.acceptees.map(({ color }) => {
+            const typedColor = color as Color;
+            const status = acceptanceStatus[typedColor] ?? "waiting";
+            const statusLabel =
+              status === "accepted"
+                ? "承諾"
+                : status === "rejected"
+                ? "拒否"
+                : "回答待ち";
             return (
               <span
                 key={color}
-                className={`trade-acceptance ${statusClass}`}
+                className={`trade-acceptance ${
+                  status === "accepted"
+                    ? "accepted"
+                    : status === "rejected"
+                    ? "rejected"
+                    : "waiting"
+                }`}
               >
                 {colorLabel(color)}: {statusLabel}
               </span>
@@ -281,6 +294,37 @@ export default function TradePanel({
       ) as ConfirmTradeAction[])
     : [];
   const currentTrade = gameState.trade ?? null;
+  const rawAcceptees = currentTrade?.acceptees ?? [];
+  const tradeParticipantColors =
+    currentTrade && gameState.colors.length > 0
+      ? (gameState.colors.filter(
+          (color) => color !== currentTrade.offerer_color
+        ) as Color[])
+      : [];
+  const normalizedAcceptees =
+    currentTrade && tradeParticipantColors.length > 0
+      ? tradeParticipantColors.map((color) => {
+          const match = rawAcceptees.find((entry) => entry.color === color);
+          return {
+            color,
+            accepted: match?.accepted ?? false,
+            responded: match?.responded ?? false,
+          };
+        })
+      : rawAcceptees;
+  const displayAcceptees =
+    normalizedAcceptees.length < rawAcceptees.length
+      ? [
+          ...normalizedAcceptees,
+          ...rawAcceptees.filter(
+            (entry) =>
+              !normalizedAcceptees.some((item) => item.color === entry.color)
+          ),
+        ]
+      : normalizedAcceptees;
+  const tradeForDisplay = currentTrade
+    ? { ...currentTrade, acceptees: displayAcceptees }
+    : null;
   const isTradeOfferer =
     currentTrade && humanColor
       ? currentTrade.offerer_color === humanColor
@@ -309,20 +353,17 @@ export default function TradePanel({
     tradeActive && isTradeOfferer && humanColor
       ? [humanColor, "CANCEL_TRADE", null]
       : undefined;
-  const acceptedColors =
-    currentTrade?.acceptees
-      ?.filter(({ accepted }) => accepted)
-      .map(({ color }) => color) ?? [];
+  const acceptedColors = displayAcceptees
+    .filter(({ accepted }) => accepted)
+    .map(({ color }) => color as Color);
   const hasAcceptedPartners = acceptedColors.length > 0;
   const noAcceptanceYet = !hasAcceptedPartners;
-  const rejectedColors =
-    currentTrade?.acceptees
-      ?.filter(({ accepted, responded }) => Boolean(responded) && !accepted)
-      .map(({ color }) => color as Color) ?? [];
-  const waitingColors =
-    currentTrade?.acceptees
-      ?.filter(({ responded }) => !responded)
-      .map(({ color }) => color) ?? [];
+  const rejectedColors = displayAcceptees
+    .filter(({ accepted, responded }) => Boolean(responded) && !accepted)
+    .map(({ color }) => color as Color);
+  const waitingColors = displayAcceptees
+    .filter(({ responded }) => !responded)
+    .map(({ color }) => color as Color);
   const hasRejectedPlayers = rejectedColors.length > 0;
   const mustCancelDueToRejections =
     hasRejectedPlayers && waitingColors.length === 0 && !hasAcceptedPartners;
@@ -335,11 +376,28 @@ export default function TradePanel({
       ? gameState.current_color
       : null;
 
+  const acceptanceStatus: AcceptanceStatusMap = {};
+  acceptedColors.forEach((color) => {
+    acceptanceStatus[color as Color] = "accepted";
+  });
+  rejectedColors.forEach((color) => {
+    acceptanceStatus[color as Color] = "rejected";
+  });
+  displayAcceptees.forEach(({ color }) => {
+    const typedColor = color as Color;
+    if (!acceptanceStatus[typedColor]) {
+      acceptanceStatus[typedColor] = "waiting";
+    }
+  });
+
   return (
     <CollapsibleSection className="analysis-box trade-panel" title={tradeTitle}>
       {currentTrade ? (
         <>
-          <TradeSummaryView trade={currentTrade} />
+          <TradeSummaryView
+            trade={tradeForDisplay ?? currentTrade}
+            acceptanceStatus={acceptanceStatus}
+          />
           {isTradeOfferer && (
             <div className="trade-status-note">
               {hasAcceptedPartners ? (
