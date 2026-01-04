@@ -223,7 +223,7 @@ export default function RecordsPage() {
     if (!selectedSummary.winning_color) {
       return "進行中";
     }
-    return `${colorLabel(selectedSummary.winning_color)} が勝利`;
+    return `${colorLabel(selectedSummary.winning_color)}`;
   }, [selectedSummary]);
 
   const negotiationStats = useMemo(() => {
