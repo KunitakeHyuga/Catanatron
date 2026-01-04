@@ -8,8 +8,10 @@ type BoardSnapshotProps = {
   gameState: GameState;
 };
 
-const MIN_BOARD_WIDTH = 280;
-const MAX_BOARD_WIDTH = 900;
+const MIN_BOARD_WIDTH = 320;
+const MAX_BOARD_WIDTH = 1150;
+const MIN_BOARD_HEIGHT = 360;
+const BOARD_ASPECT_RATIO = 0.62;
 const BOARD_VERTICAL_OFFSET = 144 + 38 + 40;
 
 export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
@@ -19,13 +21,20 @@ export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
 
   const computeDimensions = useMemo(
     () =>
-      (containerWidth: number) => {
-        const width = Math.min(
+      (containerWidth: number, containerHeight?: number) => {
+        const effectiveWidth = Math.min(
           Math.max(containerWidth - 16, MIN_BOARD_WIDTH),
           MAX_BOARD_WIDTH
         );
-        const height = Math.max(width * 0.62, 240);
-        return { width, height };
+        const baseHeight = Math.max(
+          effectiveWidth * BOARD_ASPECT_RATIO,
+          MIN_BOARD_HEIGHT
+        );
+        const heightFromContainer =
+          containerHeight && containerHeight > 0
+            ? Math.max(baseHeight, containerHeight - 16)
+            : baseHeight;
+        return { width: effectiveWidth, height: heightFromContainer };
       },
     []
   );
@@ -35,8 +44,14 @@ export default function BoardSnapshot({ gameState }: BoardSnapshotProps) {
       return;
     }
     const update = () => {
-      const containerWidth = containerRef.current?.clientWidth ?? window.innerWidth;
-      const { width, height } = computeDimensions(containerWidth);
+      const containerWidth =
+        containerRef.current?.clientWidth ?? window.innerWidth;
+      const containerHeight =
+        containerRef.current?.clientHeight ?? window.innerHeight;
+      const { width, height } = computeDimensions(
+        containerWidth,
+        containerHeight
+      );
       setBoardWidth(width);
       setBoardHeight(height);
     };

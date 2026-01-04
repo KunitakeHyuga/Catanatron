@@ -327,103 +327,6 @@ export default function RecordsPage() {
           )}
           {!detailLoading && gameState && (
             <>
-              <section className="records-summary">
-                <div>
-                  <span className="summary-label">ゲームID:</span>
-                  <span className="summary-value">{selectedGameId}</span>
-                </div>
-                <div>
-                  <span className="summary-label">勝者:</span>
-                  <span className="summary-value">{winningLabel}</span>
-                </div>
-                <div>
-                  <span className="summary-label">試合日:</span>
-                  <span className="summary-value">
-                    {formatRecordDate(selectedSummary)}
-                  </span>
-                </div>
-                <div>
-                  <span className="summary-label">ターン数:</span>
-                  <span className="summary-value">{gameState.state_index}</span>
-                </div>
-                <div>
-                  <span className="summary-label">プレイヤー数:</span>
-                  <span className="summary-value">
-                    {gameState.colors.length}人
-                  </span>
-                </div>
-              </section>
-              <section className="records-analytics">
-                <h2>
-                  交渉データ
-                  {negotiationStats?.playerColor
-                    ? `（${colorLabel(negotiationStats.playerColor)}）`
-                    : ""}
-                </h2>
-                {!negotiationStats?.playerColor ? (
-                  <p className="analytics-note">
-                    人間プレイヤーのデータがないため、交渉ログを集計できません。
-                  </p>
-                ) : (
-                  <div className="analytics-grid">
-                    <div className="analytics-item">
-                      <span className="analytics-label">交渉提案回数</span>
-                      <span className="analytics-value">
-                        {negotiationStats.offerCount}回（成立{" "}
-                        {negotiationStats.successCount}回）
-                      </span>
-                    </div>
-                    <div className="analytics-item">
-                      <span className="analytics-label">交渉成立率</span>
-                      <span className="analytics-value">
-                        {formatPercent(negotiationStats.successRate)}
-                      </span>
-                    </div>
-                    <div className="analytics-item">
-                      <span className="analytics-label">交渉に使った時間</span>
-                      <span className="analytics-value">
-                        {negotiationStats.timestampsAvailable ? (
-                          negotiationStats.totalDurationMs !== null ? (
-                            <>
-                              {formatDuration(negotiationStats.totalDurationMs)}
-                              {negotiationStats.averageDurationMs !== null && (
-                                <span className="analytics-subtext">
-                                  （平均{" "}
-                                  {formatDuration(
-                                    negotiationStats.averageDurationMs
-                                  )}
-                                  ）
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            "記録なし"
-                          )
-                        ) : (
-                          "未計測"
-                        )}
-                      </span>
-                    </div>
-                    <div className="analytics-item">
-                      <span className="analytics-label">
-                        AIアドバイス利用
-                      </span>
-                      <span className="analytics-value">
-                        {negotiationStats.adviceRequestCount}回
-                        {negotiationStats.adviceRequestCount > 0 && (
-                          <span className="analytics-subtext">
-                            （
-                            {formatPercent(
-                              negotiationStats.adviceFollowRate
-                            )}
-                            が提案に直結）
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </section>
               <section className="records-detail-body">
                 <div className="records-main">
                   <section className="records-board">
@@ -446,6 +349,110 @@ export default function RecordsPage() {
                   </section>
                 </div>
                 <aside className="records-log-panel">
+                  <section className="records-summary compact">
+                    <div>
+                      <span className="summary-label">ゲームID:</span>
+                      <span className="summary-value">{selectedGameId}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">勝者:</span>
+                      <span className="summary-value">{winningLabel}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">試合日:</span>
+                      <span className="summary-value">
+                        {formatRecordDate(selectedSummary)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="summary-label">ターン数:</span>
+                      <span className="summary-value">
+                        {gameState.state_index}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="summary-label">プレイヤー数:</span>
+                      <span className="summary-value">
+                        {gameState.colors.length}人
+                      </span>
+                    </div>
+                  </section>
+                  <section className="records-analytics">
+                    <h2>
+                      交渉データ
+                      {negotiationStats?.playerColor
+                        ? `（${colorLabel(negotiationStats.playerColor)}）`
+                        : ""}
+                    </h2>
+                    {!negotiationStats?.playerColor ? (
+                      <p className="analytics-note">
+                        人間プレイヤーのデータがないため、交渉ログを集計できません。
+                      </p>
+                    ) : (
+                      <div className="analytics-grid">
+                        <div className="analytics-item">
+                          <span className="analytics-label">交渉提案回数</span>
+                          <span className="analytics-value">
+                            {negotiationStats.offerCount}回（成立{" "}
+                            {negotiationStats.successCount}回）
+                          </span>
+                        </div>
+                        <div className="analytics-item">
+                          <span className="analytics-label">交渉成立率</span>
+                          <span className="analytics-value">
+                            {formatPercent(negotiationStats.successRate)}
+                          </span>
+                        </div>
+                        <div className="analytics-item">
+                          <span className="analytics-label">
+                            交渉に使った時間
+                          </span>
+                          <span className="analytics-value">
+                            {negotiationStats.timestampsAvailable ? (
+                              negotiationStats.totalDurationMs !== null ? (
+                                <>
+                                  {formatDuration(
+                                    negotiationStats.totalDurationMs
+                                  )}
+                                  {negotiationStats.averageDurationMs !==
+                                    null && (
+                                    <span className="analytics-subtext">
+                                      （平均{" "}
+                                      {formatDuration(
+                                        negotiationStats.averageDurationMs
+                                      )}
+                                      ）
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                "記録なし"
+                              )
+                            ) : (
+                              "未計測"
+                            )}
+                          </span>
+                        </div>
+                        <div className="analytics-item">
+                          <span className="analytics-label">
+                            AIアドバイス利用
+                          </span>
+                          <span className="analytics-value">
+                            {negotiationStats.adviceRequestCount}回
+                            {negotiationStats.adviceRequestCount > 0 && (
+                              <span className="analytics-subtext">
+                                （
+                                {formatPercent(
+                                  negotiationStats.adviceFollowRate
+                                )}
+                                が提案に直結）
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </section>
                   <section className="records-log">
                     <h2>行動ログ</h2>
                     <div className="log-entries">

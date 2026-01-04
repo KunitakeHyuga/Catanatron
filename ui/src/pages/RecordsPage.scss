@@ -9,12 +9,11 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 16px;
 
   .records-header {
     width: 100%;
-    max-width: 1600px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -76,10 +75,9 @@
 
   .records-layout {
     width: 100%;
-    max-width: 1600px;
     display: flex;
     gap: 16px;
-    align-items: flex-start;
+    align-items: stretch;
     flex-wrap: wrap;
   }
 
@@ -247,26 +245,26 @@
   }
 
   .records-detail-body {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
     gap: 16px;
     align-items: flex-start;
-    flex-wrap: wrap;
+    width: 100%;
   }
 
   .records-main {
-    flex: 2;
-    min-width: 300px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-width: 0;
   }
 
   .records-log-panel {
-    flex: 0 0 420px;
-    max-width: 480px;
-    min-width: 360px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    justify-self: stretch;
   }
 
   .records-summary {
@@ -279,12 +277,35 @@
       color: rgba(255, 255, 255, 0.6);
       margin-right: 8px;
     }
+
+    &.compact {
+      font-size: 0.9rem;
+      gap: 12px;
+      > div {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .summary-value {
+        font-weight: 600;
+        word-break: break-all;
+      }
+    }
   }
 
   .records-board {
     text-align: center;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
     .board-snapshot {
       margin-top: 8px;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      min-height: 600px;
     }
   }
 
@@ -297,9 +318,15 @@
   }
 
   .records-log {
-    height: 100%;
+    flex: 0 0 420px;
+    display: flex;
+    flex-direction: column;
+    max-height: 420px;
+    min-height: 320px;
+
     .log-entries {
-      max-height: 520px;
+      flex: 1 1 auto;
+      max-height: 100%;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -339,13 +366,12 @@
     }
 
     .records-detail-body {
+      display: flex;
       flex-direction: column;
     }
 
     .records-log-panel {
-      flex: 1 1 auto;
-      min-width: 100%;
-      max-width: none;
+      width: 100%;
     }
   }
 }
