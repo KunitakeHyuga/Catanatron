@@ -2,7 +2,9 @@ import pytest
 import json
 from unittest.mock import patch
 from catanatron.web import create_app
-from catanatron.web.models import db, GameState
+from catanatron.web.models import db, GameState, get_game_state, upsert_game_state
+from catanatron.models.enums import ActionPrompt
+from catanatron.models.actions import generate_playable_actions
 
 
 @pytest.fixture
@@ -129,6 +131,50 @@ def test_post_action_requires_payload_on_human_turn(client):
     assert after.status_code == 200
     after_data = json.loads(after.data)
     assert len(after_data["action_records"]) == actions_before
+
+
+def test_human_can_cancel_trade_during_bot_responses(client):
+    """Allow a human offerer to cancel even when bots are currently responding."""
+    post_response = client.post(
+        "/api/games", json={"players": ["HUMAN", "RANDOM", "RANDOM"]}
+    )
+    assert post_response.status_code == 200
+    game_id = json.loads(post_response.data)["game_id"]
+
+    with client.application.app_context():
+        game = get_game_state(game_id)
+        state = game.state
+        state.is_initial_build_phase = False
+        state.current_turn_index = 0  # human offerer
+        state.current_player_index = 1  # waiting for first bot to respond
+        state.current_prompt = ActionPrompt.DECIDE_TRADE
+        state.is_resolving_trade = True
+        trade_vector = (1, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+        state.current_trade = (*trade_vector, state.current_turn_index)
+        state.acceptees = tuple(False for _ in state.colors)
+        state.trade_responses = tuple(False for _ in state.colors)
+        game.playable_actions = generate_playable_actions(state)
+        upsert_game_state(game)
+
+    before_resp = client.get(f"/api/games/{game_id}/states/latest")
+    assert before_resp.status_code == 200
+    before = json.loads(before_resp.data)
+    assert before["current_color"] == "BLUE"  # bot turn
+    assert before["current_prompt"] == ActionPrompt.DECIDE_TRADE.value
+    assert before["trade"] is not None
+    before_actions = len(before["action_records"])
+
+    cancel_payload = ["RED", "CANCEL_TRADE", None]
+    cancel_resp = client.post(
+        f"/api/games/{game_id}/actions",
+        json=cancel_payload,
+    )
+    assert cancel_resp.status_code == 200
+    after = json.loads(cancel_resp.data)
+    assert after["current_color"] == "RED"
+    assert after["current_prompt"] == "PLAY_TURN"
+    assert after["trade"] is None
+    assert len(after["action_records"]) == before_actions + 1
 
 
 def test_mcts_analysis_endpoint(client):

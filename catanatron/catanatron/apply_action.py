@@ -466,15 +466,9 @@ def apply_reject_trade(state: State, action: Action):
     _set_trade_response(state, responder_index)
     next_responder = _advance_trade_responder(state)
     if next_responder is None:
-        # if no acceptees at this point, go back to PLAY_TURN
-        if sum(state.acceptees) == 0:
-            reset_trading_state(state)
-            state.current_player_index = state.current_turn_index
-            state.current_prompt = ActionPrompt.PLAY_TURN
-        else:
-            # go to offering player with all the answers
-            state.current_player_index = state.current_turn_index
-            state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
+        # No more responses pending; give control back to offerer regardless
+        state.current_player_index = state.current_turn_index
+        state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
     else:
         state.current_player_index = next_responder
         state.current_prompt = ActionPrompt.DECIDE_TRADE

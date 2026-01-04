@@ -175,15 +175,7 @@ def post_action_endpoint(game_id):
         )
 
     body_is_empty = (not request.data) or request.json is None or request.json == {}
-    if game.state.current_player().is_bot:
-        game.play_tick()
-        upsert_game_state(game)
-    else:
-        if body_is_empty:
-            abort(
-                400,
-                description="Action payload required when it's a human player's turn.",
-            )
+    if not body_is_empty:
         action = action_from_json(request.json)
         try:
             game.execute(action)
@@ -191,6 +183,15 @@ def post_action_endpoint(game_id):
             logging.warning("Invalid action for game %s: %s", game_id, exc)
             abort(400, description=str(exc))
         upsert_game_state(game)
+    else:
+        if game.state.current_player().is_bot:
+            game.play_tick()
+            upsert_game_state(game)
+        else:
+            abort(
+                400,
+                description="Action payload required when it's a human player's turn.",
+            )
 
     return Response(
         response=json.dumps(game, cls=GameEncoder),
