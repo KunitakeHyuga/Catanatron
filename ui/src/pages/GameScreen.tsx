@@ -26,6 +26,8 @@ import BuildCostGuide from "../components/BuildCostGuide";
 import TradePanel from "../components/TradePanel";
 import { upsertLocalRecord } from "../utils/localRecords";
 import type { GameAction, GameState } from "../utils/api.types";
+import useSoundEffects from "../hooks/useSoundEffects";
+import { resumeAudioContext } from "../utils/audioManager";
 
 const HUMAN_BOT_DELAY_MS = 4000;
 const DICE_ROLL_DELAY_MS = 4000;
@@ -37,6 +39,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   const [isBotThinking, setIsBotThinking] = useState(false);
   const botDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const botProcessingRef = useRef(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Load game state
   useEffect(() => {
@@ -163,6 +166,15 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
     useRollDisplay(state.gameState);
+  useSoundEffects(state.gameState, soundEnabled);
+
+  useEffect(() => {
+    const resume = () => {
+      resumeAudioContext();
+    };
+    window.addEventListener("pointerdown", resume, { once: true });
+    return () => window.removeEventListener("pointerdown", resume);
+  }, []);
 
   useEffect(() => {
     if (!gameId || !state.gameState || replayMode) {
@@ -192,6 +204,15 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   const turnPillClass = state.gameState
     ? `turn-pill-${state.gameState.current_color.toLowerCase()}`
     : undefined;
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      if (next) {
+        resumeAudioContext();
+      }
+      return next;
+    });
+  }, []);
 
   if (!state.gameState) {
     return (
@@ -207,6 +228,16 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
   return (
     <main>
       <h1 className="logo">Catanatron</h1>
+      <div className="sound-toggle">
+        <Button
+          variant={soundEnabled ? "contained" : "outlined"}
+          color="secondary"
+          onClick={toggleSound}
+          size="small"
+        >
+          {soundEnabled ? "サウンドON" : "サウンドOFF"}
+        </Button>
+      </div>
       <TurnIndicator gameState={state.gameState} />
       <RollingDiceOverlay
         roll={overlayRoll}
