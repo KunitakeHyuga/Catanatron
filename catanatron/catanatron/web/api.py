@@ -13,6 +13,8 @@ from catanatron.web.models import (
     GameSummary,
     db,
     delete_game,
+    list_game_events,
+    log_game_event,
 )
 from catanatron.json import GameEncoder, action_from_json
 from catanatron.models.player import Color, Player, RandomPlayer
@@ -138,6 +140,27 @@ def get_game_endpoint(game_id, state_index):
     )
 
 
+@bp.route("/games/<string:game_id>/events", methods=("GET",))
+def list_game_events_endpoint(game_id):
+    event_type = request.args.get("event_type")
+    events = list_game_events(game_id, event_type)
+    payload = []
+    for event in events:
+        payload.append(
+            {
+                "event_id": event.id,
+                "game_id": event.game_id,
+                "event_type": event.event_type,
+                "state_index": event.state_index,
+                "created_at": event.created_at.isoformat()
+                if event.created_at
+                else None,
+                "payload": event.payload,
+            }
+        )
+    return jsonify({"events": payload})
+
+
 @bp.route("/games/<string:game_id>/actions", methods=["POST"])
 def post_action_endpoint(game_id):
     game = get_game_state(game_id)
@@ -151,12 +174,16 @@ def post_action_endpoint(game_id):
             mimetype="application/json",
         )
 
-    # TODO: remove `or body_is_empty` when fully implement actions in FE
     body_is_empty = (not request.data) or request.json is None or request.json == {}
-    if game.state.current_player().is_bot or body_is_empty:
+    if game.state.current_player().is_bot:
         game.play_tick()
         upsert_game_state(game)
     else:
+        if body_is_empty:
+            abort(
+                400,
+                description="Action payload required when it's a human player's turn.",
+            )
         action = action_from_json(request.json)
         try:
             game.execute(action)
@@ -254,6 +281,34 @@ def negotiation_advice_endpoint(game_id, state_index):
         abort(404, description="Game state not found")
 
     try:
+        resolved_state_index = (
+            parsed_state_index
+            if parsed_state_index is not None
+            else len(game.state.action_records)
+        )
+        players = list(getattr(game.state, "players", []))
+        player_by_color = {player.color: player for player in players}
+        human_colors = [
+            player.color.value for player in players if not player.is_bot
+        ]
+        current_color = game.state.current_color()
+        requester_color = None
+        if current_color:
+            current_player = player_by_color.get(current_color)
+            if current_player and not current_player.is_bot:
+                requester_color = current_color.value
+        if requester_color is None and len(human_colors) == 1:
+            requester_color = human_colors[0]
+        log_game_event(
+            game_id,
+            "NEGOTIATION_ADVICE_REQUEST",
+            state_index=resolved_state_index,
+            payload={
+                "requester_color": requester_color,
+                "human_colors": human_colors,
+                "current_color": current_color.value if current_color else None,
+            },
+        )
         payload = request_negotiation_advice(game)
         return jsonify({"success": True, **payload})
     except NegotiationAdviceUnavailableError as exp:

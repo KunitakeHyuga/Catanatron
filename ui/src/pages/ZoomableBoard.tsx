@@ -13,7 +13,7 @@ import type { CatanState } from "../store";
 import { useParams } from "react-router";
 import ACTIONS from "../actions";
 import Board from "./Board";
-import type { Color, GameAction, TileCoordinate, GameState } from "../utils/api.types";
+import type { Color, GameAction, TileCoordinate, GameState, MoveRobberAction } from "../utils/api.types";
 
 /**
  * Returns object representing actions to be taken if click on node.
@@ -107,6 +107,7 @@ export default function ZoomableBoard({
   const [show, setShow] = useState(false);
   const [recentNodeId, setRecentNodeId] = useState<number | null>(null);
   const [recentEdgeId, setRecentEdgeId] = useState<string | null>(null);
+  const [recentRobberCoordinate, setRecentRobberCoordinate] = useState<TileCoordinate | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameState = state.gameState;
   if (!gameState)
@@ -215,23 +216,29 @@ export default function ZoomableBoard({
     const latest = records[records.length - 1][0];
     let nextNode: number | null = null;
     let nextEdge: string | null = null;
+    let nextRobberCoordinate: TileCoordinate | null = null;
     if (latest[1] === "BUILD_SETTLEMENT" || latest[1] === "BUILD_CITY") {
       nextNode = latest[2] as number;
     } else if (latest[1] === "BUILD_ROAD") {
       const edge = latest[2] as [number, number];
       nextEdge = `${edge[0]},${edge[1]}`;
+    } else if (latest[1] === "MOVE_ROBBER") {
+      const moveAction = latest as MoveRobberAction;
+      nextRobberCoordinate = moveAction[2][0];
     }
-    if (!nextNode && !nextEdge) {
+    if (!nextNode && !nextEdge && !nextRobberCoordinate) {
       return;
     }
     setRecentNodeId(nextNode);
     setRecentEdgeId(nextEdge);
+    setRecentRobberCoordinate(nextRobberCoordinate);
     if (highlightTimeoutRef.current) {
       clearTimeout(highlightTimeoutRef.current);
     }
     highlightTimeoutRef.current = setTimeout(() => {
       setRecentNodeId(null);
       setRecentEdgeId(null);
+      setRecentRobberCoordinate(null);
       highlightTimeoutRef.current = null;
     }, 3200);
   }, [gameState, replayMode]);
@@ -272,6 +279,7 @@ export default function ZoomableBoard({
             isMovingRobber={state.isMovingRobber}
             recentNodeId={recentNodeId}
             recentEdgeId={recentEdgeId}
+            recentRobberCoordinate={recentRobberCoordinate}
           />
         </TransformComponent>
       </div>

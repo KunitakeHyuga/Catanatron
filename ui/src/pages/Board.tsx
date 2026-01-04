@@ -46,6 +46,7 @@ type BoardProps = {
   fitContainer?: boolean;
   recentNodeId?: number | null;
   recentEdgeId?: EdgeId | null;
+  recentRobberCoordinate?: TileCoordinate | null;
 }
 
 export default function Board({
@@ -64,6 +65,7 @@ export default function Board({
   fitContainer = false,
   recentNodeId = null,
   recentEdgeId = null,
+  recentRobberCoordinate = null,
 }: BoardProps) {
   // TODO: Keep in sync with CSS
   const containerHeight = fitContainer ? height : height - 144 - 38 - 40;
@@ -74,17 +76,25 @@ export default function Board({
     return null;
   }
 
-  const tiles = gameState.tiles.map(({ coordinate, tile }) => (
-    <Tile
-      key={`${coordinate}`}
-      center={center}
-      coordinate={coordinate}
-      tile={tile}
-      size={size}
-      flashing={isMovingRobber}
-      onClick={() => handleTileClick(coordinate)}
-    />
-  ));
+  const tiles = gameState.tiles.map(({ coordinate, tile }) => {
+    const robberRecentlyMoved =
+      !!recentRobberCoordinate &&
+      coordinate.every(
+        (value, index) => value === recentRobberCoordinate[index]
+      );
+    return (
+      <Tile
+        key={`${coordinate}`}
+        center={center}
+        coordinate={coordinate}
+        tile={tile}
+        size={size}
+        flashing={isMovingRobber}
+        onClick={() => handleTileClick(coordinate)}
+        robberHighlight={robberRecentlyMoved}
+      />
+    );
+  });
   const nodes = Object.values(gameState.nodes).map(
     ({ color, building, direction, tile_coordinate, id }) => (
       <Node

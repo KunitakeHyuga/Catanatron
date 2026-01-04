@@ -1,6 +1,7 @@
 import random
+import time
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Optional
 
 from catanatron.models.board import Board
 from catanatron.models.enums import (
@@ -121,6 +122,9 @@ def apply_action(
         raise ValueError("Unknown ActionType " + str(action.action_type))
 
     state.action_records.append(action_record)
+    if not hasattr(state, "action_timestamps"):
+        state.action_timestamps = []
+    state.action_timestamps.append(int(time.time() * 1000))
     return action_record
 
 
@@ -427,10 +431,16 @@ def apply_offer_trade(state: State, action: Action):
     state.is_resolving_trade = True
     state.current_trade = (*action.value, state.current_turn_index)
 
-    # go in seating order; order won't matter because of "acceptees hook"
-    state.current_player_index = next(
-        i for i, c in enumerate(state.colors) if c != action.color
-    )  # cant ask yourself
+    # start from the offerer, then advance to the first responder in seating order
+    state.current_player_index = state.current_turn_index
+    next_responder = _advance_trade_responder(state)
+    if next_responder is None:
+        # no other players to ask; immediately reset trade state
+        reset_trading_state(state)
+        state.current_prompt = ActionPrompt.PLAY_TURN
+        return ActionRecord(action=action, result=None)
+
+    state.current_player_index = next_responder
     state.current_prompt = ActionPrompt.DECIDE_TRADE
     return ActionRecord(action=action, result=None)
 
@@ -450,26 +460,20 @@ def apply_accept_trade(state: State, action: Action):
 
 
 def apply_reject_trade(state: State, action: Action):
-    try:
-        # keep going around table w/o asking yourself or players that have answered
-        state.current_player_index = next(
-            i
-            for i, c in enumerate(state.colors)
-            if c != action.color and i > state.current_player_index
-        )
-        # .is_resolving_trade, .current_trade, .current_prompt, .acceptees stay the same
-    except StopIteration:
+    next_responder = _advance_trade_responder(state)
+    if next_responder is None:
         # if no acceptees at this point, go back to PLAY_TURN
         if sum(state.acceptees) == 0:
             reset_trading_state(state)
-
             state.current_player_index = state.current_turn_index
             state.current_prompt = ActionPrompt.PLAY_TURN
         else:
             # go to offering player with all the answers
-            # .is_resolving_trade, .current_trade, .acceptees stay the same
             state.current_player_index = state.current_turn_index
             state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
+    else:
+        state.current_player_index = next_responder
+        state.current_prompt = ActionPrompt.DECIDE_TRADE
 
     return ActionRecord(action=action, result=None)
 
@@ -577,3 +581,26 @@ def reset_trading_state(state):
     state.is_resolving_trade = False
     state.current_trade = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     state.acceptees = tuple(False for _ in state.colors)
+
+
+def _get_trade_offerer_index(state: State) -> int:
+    trade_vector = getattr(state, "current_trade", ())
+    if len(trade_vector) >= 11 and isinstance(trade_vector[10], int):
+        return trade_vector[10] % len(state.colors)
+    return state.current_turn_index
+
+
+def _advance_trade_responder(state: State) -> Optional[int]:
+    """Return the next player index that should respond to a trade or None if done."""
+    num_players = len(state.colors)
+    if num_players <= 1:
+        return None
+    offerer_index = _get_trade_offerer_index(state)
+    current_index = state.current_player_index
+    for _ in range(1, num_players):
+        candidate = (current_index + 1) % num_players
+        current_index = candidate
+        if candidate == offerer_index:
+            return None
+        return candidate
+    return None

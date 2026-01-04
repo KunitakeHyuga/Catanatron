@@ -1,5 +1,6 @@
 import pytest
 import json
+from unittest.mock import patch
 from catanatron.web import create_app
 from catanatron.web.models import db, GameState
 
@@ -100,6 +101,36 @@ def test_post_action_bot_turn(client):
     assert len(data_after["action_records"]) > len(data_before["action_records"])
 
 
+def test_post_action_requires_payload_on_human_turn(client):
+    """Ensure empty POSTs are rejected when a human must act."""
+    post_response = client.post(
+        "/api/games", json={"players": ["HUMAN", "RANDOM", "RANDOM"]}
+    )
+    assert post_response.status_code == 200
+    game_id = json.loads(post_response.data)["game_id"]
+
+    # Advance bots until it's a human's turn
+    while True:
+        latest = client.get(f"/api/games/{game_id}/states/latest")
+        assert latest.status_code == 200
+        latest_data = json.loads(latest.data)
+        current_color = latest_data["current_color"]
+        bot_colors = set(latest_data["bot_colors"])
+        if current_color not in bot_colors:
+            break
+        advance = client.post(f"/api/games/{game_id}/actions", json={})
+        assert advance.status_code == 200
+
+    actions_before = len(latest_data["action_records"])
+    response = client.post(f"/api/games/{game_id}/actions")
+    assert response.status_code == 400
+
+    after = client.get(f"/api/games/{game_id}/states/latest")
+    assert after.status_code == 200
+    after_data = json.loads(after.data)
+    assert len(after_data["action_records"]) == actions_before
+
+
 def test_mcts_analysis_endpoint(client):
     """Test the MCTS analysis endpoint."""
     post_response = client.post("/api/games", json={"players": ["RANDOM", "RANDOM"]})
@@ -127,3 +158,32 @@ def test_stress_test_endpoint(client):
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data["winning_color"] is None
+
+
+def test_negotiation_advice_logs_event_and_listed(client):
+    """Ensure requesting advice logs an event and it can be fetched."""
+    post_response = client.post(
+        "/api/games", json={"players": ["HUMAN", "RANDOM", "RANDOM", "RANDOM"]}
+    )
+    assert post_response.status_code == 200
+    game_id = json.loads(post_response.data)["game_id"]
+
+    with patch("catanatron.web.api.request_negotiation_advice") as mock_advice:
+        mock_advice.return_value = {"advice": "dummy"}
+        response = client.post(
+            f"/api/games/{game_id}/states/latest/negotiation-advice"
+        )
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert data["success"] is True
+    assert data["advice"] == "dummy"
+
+    events_resp = client.get(f"/api/games/{game_id}/events")
+    assert events_resp.status_code == 200
+    events_data = json.loads(events_resp.data)
+    events = events_data.get("events", [])
+    assert len(events) == 1
+    event = events[0]
+    assert event["event_type"] == "NEGOTIATION_ADVICE_REQUEST"
+    assert event["state_index"] == 0
+    assert event["payload"]["requester_color"] == "RED"

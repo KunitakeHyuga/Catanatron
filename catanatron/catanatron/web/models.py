@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 from contextlib import contextmanager
+from typing import Any, Dict, Optional
 from catanatron.json import GameEncoder
 
 from catanatron.game import Game
@@ -67,6 +68,17 @@ class GameSummary(Base):
     updated_at = Column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+
+class GameEvent(Base):
+    __tablename__ = "game_events"
+
+    id = Column(Integer, primary_key=True)
+    game_id = Column(String(64), nullable=False, index=True)
+    state_index = Column(Integer, nullable=True)
+    event_type = Column(String(64), nullable=False)
+    payload = Column(JSON, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
 
 
 class PvpRoomState(Base):
@@ -174,8 +186,38 @@ def delete_game(game_id: str) -> bool:
         .filter_by(game_id=game_id)
         .delete(synchronize_session=False)
     )
-    if deleted_states == 0 and deleted_summary == 0:
+    deleted_events = (
+        db.session.query(GameEvent)
+        .filter_by(game_id=game_id)
+        .delete(synchronize_session=False)
+    )
+    if deleted_states == 0 and deleted_summary == 0 and deleted_events == 0:
         db.session.rollback()
         return False
     db.session.commit()
     return True
+
+
+def log_game_event(
+    game_id: str,
+    event_type: str,
+    state_index: Optional[int] = None,
+    payload: Optional[Dict[str, Any]] = None,
+):
+    event = GameEvent(
+        game_id=game_id,
+        state_index=state_index,
+        event_type=event_type,
+        payload=payload,
+        created_at=datetime.utcnow(),
+    )
+    db.session.add(event)
+    db.session.commit()
+    return event
+
+
+def list_game_events(game_id: str, event_type: str | None = None):
+    query = db.session.query(GameEvent).filter_by(game_id=game_id)
+    if event_type:
+        query = query.filter_by(event_type=event_type)
+    return query.order_by(GameEvent.created_at.asc()).all()

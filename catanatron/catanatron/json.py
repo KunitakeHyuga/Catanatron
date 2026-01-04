@@ -139,6 +139,7 @@ class GameEncoder(json.JSONEncoder):
                 "nodes": nodes,
                 "edges": list(edges.values()),
                 "action_records": [self.default(a) for a in obj.state.action_records],
+                "action_timestamps": getattr(obj.state, "action_timestamps", []),
                 "player_state": obj.state.player_state,
                 "colors": obj.state.colors,
                 "bot_colors": list(

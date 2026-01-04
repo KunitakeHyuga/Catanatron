@@ -69,6 +69,18 @@
   transform: scale(1.02);
 }
 
+.tile.robber-highlight::after {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 16px;
+  border: 2px solid rgba(255, 227, 130, 0.95);
+  box-shadow: 0 0 18px rgba(255, 214, 102, 0.8);
+  pointer-events: none;
+  animation: robber-glow 3.2s ease-out forwards;
+  transform-origin: center;
+}
+
 // ===== Edges
 .edge {
   position: absolute;
@@ -209,5 +221,20 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.45);
+  }
+}
+
+@keyframes robber-glow {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.92);
+  }
+  70% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
   }
 }

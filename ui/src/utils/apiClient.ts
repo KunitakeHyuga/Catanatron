@@ -76,6 +76,27 @@ export async function listGames(): Promise<GameRecordSummary[]> {
   return response.data.games;
 }
 
+export type GameEvent = {
+  event_id: number;
+  game_id: string;
+  event_type: string;
+  state_index?: number | null;
+  created_at?: string | null;
+  payload?: Record<string, unknown> | null;
+};
+
+export async function getGameEvents(
+  gameId: string,
+  eventType?: string
+): Promise<GameEvent[]> {
+  const params = eventType ? { event_type: eventType } : undefined;
+  const response = await axios.get<{ events: GameEvent[] }>(
+    `${API_URL}/api/games/${gameId}/events`,
+    { params }
+  );
+  return response.data.events;
+}
+
 const buildPvpHeaders = (token: string) => ({
   headers: { [PVP_TOKEN_HEADER]: token },
 });

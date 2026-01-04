@@ -8,7 +8,11 @@ from catanatron.state_functions import (
     player_has_rolled,
 )
 from catanatron.game import Game, is_valid_trade
-from catanatron.apply_action import apply_action
+from catanatron.apply_action import (
+    apply_action,
+    apply_offer_trade,
+    apply_reject_trade,
+)
 from catanatron.state_functions import (
     player_key,
     player_deck_replenish,
@@ -588,3 +592,46 @@ def test_trading_sequence(fake_roll_dice):
     expected[index_of_a_resource_owned] -= 1
     expected[missing_resource_index] += 1
     assert get_player_freqdeck(game.state, p0.color) == expected
+
+
+def test_trade_rejections_cover_all_players():
+    players = [
+        SimplePlayer(Color.RED),
+        SimplePlayer(Color.BLUE),
+        SimplePlayer(Color.WHITE),
+        SimplePlayer(Color.ORANGE),
+    ]
+    # Seed chosen so RED is not seat 0 and players exist both before and after.
+    game = Game(players, seed=1)
+    state = game.state
+    offerer = next(player for player in state.players if player.color == Color.RED)
+    offerer_index = state.players.index(offerer)
+    assert offerer_index != 0  # ensure wrap-around scenario
+
+    # Force game context to offerer's normal turn
+    state.current_player_index = offerer_index
+    state.current_turn_index = offerer_index
+    state.current_prompt = ActionPrompt.PLAY_TURN
+    state.is_initial_build_phase = False
+    state.is_resolving_trade = False
+    state.acceptees = tuple(False for _ in state.colors)
+    state.current_trade = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+    trade_payload = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    offer_action = Action(offerer.color, ActionType.OFFER_TRADE, trade_payload)
+
+    apply_offer_trade(state, offer_action)
+    assert state.current_prompt == ActionPrompt.DECIDE_TRADE
+
+    responders = []
+    while state.current_prompt == ActionPrompt.DECIDE_TRADE:
+        responder_index = state.current_player_index
+        responder_color = state.colors[responder_index]
+        responders.append(responder_color)
+        reject_action = Action(responder_color, ActionType.REJECT_TRADE, None)
+        apply_reject_trade(state, reject_action)
+
+    # Should have cycled through every other player exactly once
+    assert set(responders) == {color for color in state.colors if color != offerer.color}
+    assert not state.is_resolving_trade
+    assert state.current_prompt == ActionPrompt.PLAY_TURN

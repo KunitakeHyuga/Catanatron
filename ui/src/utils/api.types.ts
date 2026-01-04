@@ -137,6 +137,7 @@ export type GameState = {
   current_prompt: string;
   player_state: Record<string, PlayerState>;
   action_records: GameActionRecord[];
+  action_timestamps?: number[];
   robber_coordinate: TileCoordinate;
   nodes: Array<{
     id: number;

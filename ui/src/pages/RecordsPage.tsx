@@ -9,8 +9,10 @@ import PlayerStateBox from "../components/PlayerStateBox";
 import type { GameState } from "../utils/api.types";
 import {
   deleteGame,
+  getGameEvents,
   getState,
   listGames,
+  type GameEvent,
   type GameRecordSummary,
 } from "../utils/apiClient";
 import { playerKey } from "../utils/stateUtils";
@@ -21,6 +23,7 @@ import {
   type LocalRecord,
   removeLocalRecord,
 } from "../utils/localRecords";
+import { calculateNegotiationStats } from "../utils/negotiationStats";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   year: "numeric",
@@ -81,6 +84,7 @@ export default function RecordsPage() {
     paramsGameId ?? null
   );
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,17 +128,30 @@ export default function RecordsPage() {
     const fetchRecord = async () => {
       if (!selectedGameId) {
         setGameState(null);
+        setGameEvents([]);
         return;
       }
       try {
         setDetailLoading(true);
         setError(null);
-        const latestState = await getState(selectedGameId, "latest");
+        const statePromise = getState(selectedGameId, "latest");
+        const eventsPromise: Promise<GameEvent[]> = getGameEvents(
+          selectedGameId
+        ).catch((eventsError) => {
+          console.error(eventsError);
+          return [];
+        });
+        const [latestState, events] = await Promise.all([
+          statePromise,
+          eventsPromise,
+        ]);
         setGameState(latestState);
+        setGameEvents(events);
       } catch (err) {
         console.error(err);
         setError("対戦記録の詳細を取得できませんでした。");
         setGameState(null);
+        setGameEvents([]);
       } finally {
         setDetailLoading(false);
       }
@@ -177,6 +194,31 @@ export default function RecordsPage() {
     }
     return `${colorLabel(selectedSummary.winning_color)} が勝利`;
   }, [selectedSummary]);
+
+  const negotiationStats = useMemo(() => {
+    if (!gameState) {
+      return null;
+    }
+    return calculateNegotiationStats(gameState, gameEvents);
+  }, [gameState, gameEvents]);
+
+  const formatPercent = (value: number | null): string => {
+    if (value === null || Number.isNaN(value)) {
+      return "—";
+    }
+    return `${Math.round(value * 100)}%`;
+  };
+
+  const formatDuration = (value: number | null): string => {
+    if (value === null) {
+      return "—";
+    }
+    const seconds = value / 1000;
+    if (seconds >= 10) {
+      return `${seconds.toFixed(0)}秒`;
+    }
+    return `${seconds.toFixed(1)}秒`;
+  };
 
   const handleDeleteSelectedGame = useCallback(async () => {
     if (!selectedGameId) {
@@ -310,6 +352,77 @@ export default function RecordsPage() {
                     {gameState.colors.length}人
                   </span>
                 </div>
+              </section>
+              <section className="records-analytics">
+                <h2>
+                  交渉データ
+                  {negotiationStats?.playerColor
+                    ? `（${colorLabel(negotiationStats.playerColor)}）`
+                    : ""}
+                </h2>
+                {!negotiationStats?.playerColor ? (
+                  <p className="analytics-note">
+                    人間プレイヤーのデータがないため、交渉ログを集計できません。
+                  </p>
+                ) : (
+                  <div className="analytics-grid">
+                    <div className="analytics-item">
+                      <span className="analytics-label">交渉提案回数</span>
+                      <span className="analytics-value">
+                        {negotiationStats.offerCount}回（成立{" "}
+                        {negotiationStats.successCount}回）
+                      </span>
+                    </div>
+                    <div className="analytics-item">
+                      <span className="analytics-label">交渉成立率</span>
+                      <span className="analytics-value">
+                        {formatPercent(negotiationStats.successRate)}
+                      </span>
+                    </div>
+                    <div className="analytics-item">
+                      <span className="analytics-label">交渉に使った時間</span>
+                      <span className="analytics-value">
+                        {negotiationStats.timestampsAvailable ? (
+                          negotiationStats.totalDurationMs !== null ? (
+                            <>
+                              {formatDuration(negotiationStats.totalDurationMs)}
+                              {negotiationStats.averageDurationMs !== null && (
+                                <span className="analytics-subtext">
+                                  （平均{" "}
+                                  {formatDuration(
+                                    negotiationStats.averageDurationMs
+                                  )}
+                                  ）
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            "記録なし"
+                          )
+                        ) : (
+                          "未計測"
+                        )}
+                      </span>
+                    </div>
+                    <div className="analytics-item">
+                      <span className="analytics-label">
+                        AIアドバイス利用
+                      </span>
+                      <span className="analytics-value">
+                        {negotiationStats.adviceRequestCount}回
+                        {negotiationStats.adviceRequestCount > 0 && (
+                          <span className="analytics-subtext">
+                            （
+                            {formatPercent(
+                              negotiationStats.adviceFollowRate
+                            )}
+                            が提案に直結）
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </section>
               <section className="records-detail-body">
                 <div className="records-main">

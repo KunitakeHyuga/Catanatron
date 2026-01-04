@@ -115,6 +115,7 @@ class State:
             }
             # for undo and to show in the UI the action log
             self.action_records: List[ActionRecord] = []
+            self.action_timestamps: List[int] = []
             self.num_turns = 0  # num_completed_turns
 
             # Current prompt / player
@@ -166,6 +167,7 @@ class State:
             pickle.dumps(self.buildings_by_color)
         )
         state_copy.action_records = self.action_records.copy()
+        state_copy.action_timestamps = getattr(self, "action_timestamps", []).copy()
         state_copy.num_turns = self.num_turns
 
         # Current prompt / player

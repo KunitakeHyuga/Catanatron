@@ -197,6 +197,53 @@
         font-size: 1.2rem;
       }
     }
+
+    .records-analytics {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .analytics-note {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .analytics-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .analytics-item {
+        padding: 12px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .analytics-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .analytics-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .analytics-subtext {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
   }
 
   .records-detail-body {
