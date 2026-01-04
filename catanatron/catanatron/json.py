@@ -161,6 +161,7 @@ class GameEncoder(json.JSONEncoder):
                 "current_playable_actions": obj.playable_actions,
                 "longest_roads_by_player": longest_roads_by_player(obj.state),
                 "winning_color": obj.winning_color(),
+                "num_turns": getattr(obj.state, "num_turns", 0),
                 "state_index": get_state_index(obj.state),
                 "has_human_player": any(not player.is_bot for player in obj.state.players),
                 "trade": trade_state,

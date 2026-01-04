@@ -65,6 +65,7 @@ export type GameRecordSummary = {
   winning_color: Color | null;
   current_color: Color;
   player_colors: Color[];
+  turns_completed?: number | null;
   updated_at?: string;
   updated_at_ms?: number;
 };

@@ -77,7 +77,14 @@ function mergeRecords(
   local.forEach((record) => {
     const existing = mergedMap.get(record.game_id);
     if (!existing || record.state_index >= existing.state_index) {
-      mergedMap.set(record.game_id, record);
+      const mergedRecord: EnrichedRecord = {
+        ...record,
+        turns_completed:
+          record.turns_completed ??
+          existing?.turns_completed ??
+          null,
+      };
+      mergedMap.set(record.game_id, mergedRecord);
     }
   });
   return Array.from(mergedMap.values())
@@ -241,6 +248,16 @@ export default function RecordsPage() {
     return `${seconds.toFixed(1)}秒`;
   };
 
+  const turnSummaryValue = useMemo(() => {
+    if (!gameState) {
+      return "—";
+    }
+    const finishedTurns = gameState.action_records.filter(
+      (record) => record[0][1] === "END_TURN"
+    ).length;
+    return `${finishedTurns}（${gameState.state_index}）`;
+  }, [gameState]);
+
   const downloadLogCsv = useCallback(() => {
     if (!gameState || gameState.action_records.length === 0) {
       return;
@@ -362,7 +379,12 @@ export default function RecordsPage() {
                         ? colorLabel(game.winning_color)
                         : "進行中"}
                     </span>
-                    <span>ターン {game.state_index}</span>
+                    <span>
+                      ターン{" "}
+                      {game.turns_completed != null
+                        ? `${game.turns_completed}（${game.state_index}）`
+                        : game.state_index}
+                    </span>
                     <span>
                       プレイヤー数:{" "}
                       {game.player_colors?.length
@@ -425,7 +447,7 @@ export default function RecordsPage() {
                     <div>
                       <span className="summary-label">ターン数:</span>
                       <span className="summary-value">
-                        {gameState.state_index}
+                        {turnSummaryValue}
                       </span>
                     </div>
                     <div>

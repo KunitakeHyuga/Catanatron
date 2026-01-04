@@ -19,6 +19,7 @@ from catanatron.web.models import (
 from catanatron.json import GameEncoder, action_from_json
 from catanatron.models.player import Color, Player, RandomPlayer
 from catanatron.game import Game
+from catanatron.models.enums import ActionType
 from catanatron.players.value import ValueFunctionPlayer
 from catanatron.players.minimax import AlphaBetaPlayer
 from catanatron.web.mcts_analysis import GameAnalyzer
@@ -85,6 +86,18 @@ def list_games_endpoint():
     )
     payload = []
     for summary in summaries:
+        turns_completed = None
+        try:
+            game = get_game_state(summary.game_id, summary.latest_state_index)
+            turns_completed = sum(
+                1
+                for record in getattr(game.state, "action_records", [])
+                if record.action.action_type == ActionType.END_TURN
+            )
+        except Exception as exc:
+            logging.warning(
+                "Failed to compute turn count for %s: %s", summary.game_id, exc
+            )
         payload.append(
             {
                 "game_id": summary.game_id,
@@ -92,6 +105,7 @@ def list_games_endpoint():
                 "winning_color": summary.winning_color,
                 "current_color": summary.current_color,
                 "player_colors": summary.player_colors,
+                "turns_completed": turns_completed,
                 "updated_at": summary.updated_at.isoformat()
                 if summary.updated_at
                 else None,
@@ -112,6 +126,11 @@ def list_games_endpoint():
             game = get_game_state(uuid, state_index)
             current_color = game.state.current_color()
             winning_color = game.winning_color()
+            turns_completed = sum(
+                1
+                for record in getattr(game.state, "action_records", [])
+                if record.action.action_type == ActionType.END_TURN
+            )
             payload.append(
                 {
                     "game_id": uuid,
@@ -119,6 +138,7 @@ def list_games_endpoint():
                     "winning_color": winning_color.value if winning_color else None,
                     "current_color": current_color.value if current_color else None,
                     "player_colors": [color.value for color in game.state.colors],
+                    "turns_completed": turns_completed,
                     "updated_at": None,
                 }
             )

@@ -157,6 +157,7 @@ export type GameState = {
   edgeActions?: GameAction[];
   nodeActions?: GameAction[];
   state_index: number;
+  num_turns: number;
   has_human_player?: boolean;
   trade?: TradeSummary | null;
 };

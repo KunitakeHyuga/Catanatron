@@ -81,6 +81,12 @@ export function upsertLocalRecord(
     winning_color: gameState.winning_color ?? null,
     current_color: gameState.current_color,
     player_colors: gameState.colors,
+    turns_completed: gameState.action_records
+      ? gameState.action_records.reduce(
+          (sum, record) => (record[0][1] === "END_TURN" ? sum + 1 : sum),
+          0
+        )
+      : 0,
   };
   const updated = [nextRecord, ...withoutCurrent]
     .sort((a, b) => b.updated_at_ms - a.updated_at_ms)
