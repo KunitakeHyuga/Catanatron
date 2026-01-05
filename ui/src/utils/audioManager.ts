@@ -55,8 +55,9 @@ const SOUND_LIBRARY: Record<SoundEffect, ToneStep[]> = {
 };
 
 let audioContext: AudioContext | null = null;
+let audioUnlocked = false;
 
-function getAudioContext(): AudioContext | null {
+function createAudioContext(): AudioContext | null {
   if (typeof window === "undefined") {
     return null;
   }
@@ -71,7 +72,15 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
+function getAudioContext(): AudioContext | null {
+  if (!audioUnlocked) {
+    return null;
+  }
+  return createAudioContext();
+}
+
 export async function resumeAudioContext() {
+  audioUnlocked = true;
   const ctx = getAudioContext();
   if (!ctx) {
     return;
@@ -80,7 +89,7 @@ export async function resumeAudioContext() {
     try {
       await ctx.resume();
     } catch {
-      // ignore resume failures; browser likely blocked autoplay
+      // If resume fails the browser still blocks playback; keep unlocked so the next gesture can retry.
     }
   }
 }
@@ -91,8 +100,9 @@ export async function playSound(effect: SoundEffect) {
     return;
   }
   if (ctx.state === "suspended") {
-    await resumeAudioContext();
-    if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch {
       return;
     }
   }
