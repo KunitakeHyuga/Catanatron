@@ -213,6 +213,11 @@ def generate_negotiation_advice(
         "交渉アドバイスは人間プレイヤーが交渉で有利になるための具体策を最大3つ、番号付きで述べ、各アドバイスに狙いと想定される相手の反応を含めてください。"
     )
     if board_image_data_url:
+        prompt_with_instructions += (
+            "\n\n添付した盤面JPEGを観察してから回答してください。画像が確認できたら、出力の先頭に"
+            " `### 盤面画像の気づき: ...` という1文を追加し、画像から読み取れた特徴や懸念点を述べてください。"
+        )
+    if board_image_data_url:
         user_content: Any = [
             {"type": "text", "text": prompt_with_instructions},
             {

@@ -41,19 +41,59 @@ const DEV_CARD_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\broad building\b/gi, "街道建設"],
 ];
 
-function extractNegotiationAdvice(text: string): string {
-  const heading = "## 交渉アドバイス";
-  const index = text.indexOf(heading);
-  if (index === -1) {
-    return text;
+function extractNegotiationSections(text: string): string {
+  const adviceHeading = "## 交渉アドバイス";
+  const imageHeading = "### 盤面画像の気づき";
+  const loadHeading = "## 判断負荷推定";
+
+  let workingText = text;
+  const loadIndex = workingText.indexOf(loadHeading);
+  if (loadIndex >= 0) {
+    const afterLoad = workingText.slice(loadIndex + loadHeading.length);
+    const nextSectionMatch = afterLoad.match(/\n##\s+[^\n]+/);
+    const loadEnd =
+      nextSectionMatch && nextSectionMatch.index !== undefined
+        ? loadIndex + loadHeading.length + nextSectionMatch.index
+        : workingText.length;
+    workingText =
+      workingText.slice(0, loadIndex).trimEnd() +
+      "\n\n" +
+      workingText.slice(loadEnd).trimStart();
   }
-  const sliced = text.slice(index + heading.length).trim();
-  return sliced ? `交渉アドバイス\n${sliced}` : "";
+
+  const parts: string[] = [];
+
+  const adviceIndex = workingText.indexOf(adviceHeading);
+  if (adviceIndex >= 0) {
+    const adviceContent = workingText
+      .slice(adviceIndex + adviceHeading.length)
+      .trim();
+    if (adviceContent) {
+      parts.push(`交渉アドバイス\n${adviceContent}`);
+    }
+  }
+
+  const imageIndex = workingText.indexOf(imageHeading);
+  if (imageIndex >= 0) {
+    const imageEnd =
+      adviceIndex >= 0 && adviceIndex > imageIndex
+        ? adviceIndex
+        : workingText.length;
+    const imageContent = workingText.slice(imageIndex, imageEnd).trim();
+    if (imageContent) {
+      parts.unshift(imageContent);
+    }
+  }
+
+  if (parts.length === 0) {
+    return workingText;
+  }
+  return parts.join("\n\n");
 }
 
 function localizeAdviceText(text: string): string {
   let output = text.replace(/\*\*/g, "");
-  output = extractNegotiationAdvice(output);
+  output = extractNegotiationSections(output);
   [...RESOURCE_REPLACEMENTS, ...DEV_CARD_REPLACEMENTS].forEach(
     ([pattern, replacement]) => {
       output = output.replace(pattern, replacement);
@@ -87,6 +127,9 @@ export default function NegotiationAdviceBox({
       return null;
     }
     try {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => resolve(undefined));
+      });
       const htmlToImage = await loadHtmlToImage();
       const element = boardSnapshotRef.current;
       const backgroundColor =
@@ -116,11 +159,28 @@ export default function NegotiationAdviceBox({
       setLoading(true);
       setError("");
       const boardImageDataUrl = await captureBoardImage();
+      if (boardImageDataUrl) {
+        console.debug(
+          "Negotiation advice board image captured (length):",
+          boardImageDataUrl.length
+        );
+        console.info(
+          "Negotiation advice board image data URL:",
+          boardImageDataUrl
+        );
+      } else {
+        console.debug("Negotiation advice board image capture skipped.");
+      }
       const result = await requestNegotiationAdvice(
         gameId,
         stateIndex,
         boardImageDataUrl
       );
+      if (boardImageDataUrl) {
+        console.info("Negotiation advice request sent with board image.");
+      } else {
+        console.info("Negotiation advice request sent without board image.");
+      }
       if (result.success && result.advice) {
         setAdvice(localizeAdviceText(result.advice));
       } else {

@@ -320,21 +320,24 @@ def negotiation_advice_endpoint(game_id, state_index):
                 requester_color = current_color.value
         if requester_color is None and len(human_colors) == 1:
             requester_color = human_colors[0]
-        log_game_event(
-            game_id,
-            "NEGOTIATION_ADVICE_REQUEST",
-            state_index=resolved_state_index,
-            payload={
-                "requester_color": requester_color,
-                "human_colors": human_colors,
-                "current_color": current_color.value if current_color else None,
-            },
-        )
         board_image_data_url = None
         if request.is_json and request.json:
             image_candidate = request.json.get("board_image")
             if isinstance(image_candidate, str) and image_candidate.strip():
                 board_image_data_url = image_candidate
+        event_payload = {
+            "requester_color": requester_color,
+            "human_colors": human_colors,
+            "current_color": current_color.value if current_color else None,
+        }
+        if board_image_data_url:
+            event_payload["board_image_attached"] = True
+        log_game_event(
+            game_id,
+            "NEGOTIATION_ADVICE_REQUEST",
+            state_index=resolved_state_index,
+            payload=event_payload,
+        )
         payload = request_negotiation_advice(game, board_image_data_url)
         return jsonify({"success": True, **payload})
     except NegotiationAdviceUnavailableError as exp:

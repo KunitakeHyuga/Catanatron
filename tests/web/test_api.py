@@ -236,3 +236,4 @@ def test_negotiation_advice_logs_event_and_listed(client):
     assert event["event_type"] == "NEGOTIATION_ADVICE_REQUEST"
     assert event["state_index"] == 0
     assert event["payload"]["requester_color"] == "RED"
+    assert event["payload"]["board_image_attached"] is True
