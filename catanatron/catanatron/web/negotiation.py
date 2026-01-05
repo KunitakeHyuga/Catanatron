@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, Dict, List, Tuple
 
@@ -205,44 +206,56 @@ def generate_negotiation_advice(
         temperature = None
     instructions = "\n".join(
         [
-            "あなたはカタンの交渉支援AIエージェントです。以下のテンプレートを厳守し、日本語で回答してください。",
-            "結論：今は(交渉する/交渉しない). 理由：(最重要1行)",
+            "あなたはカタンの交渉支援AIエージェントです。以下のテンプレートを厳守し、日本語で回答してください。各見出しや項目名は必ず太字で示し、Markdownで読みやすく整形します。",
+            "今は(交渉する/交渉しない)。",
+            "理由：(1行で簡潔に)。",
             "",
-            "今見るもの(最大5)",
-            "- (例：自分の不足資源)：",
-            "- (例：相手AのVPと最長路/最大騎士)：",
-            "- (例：ロバー位置と直近の出目)：",
-            "- (例：港の有無)：",
-            "- (例：相手の手札枚数)：",
+            "今見るもの（最大5）",
+            " 自分の不足資源：",
+            " 相手AのVPと最長路/最大騎士：",
+            " ロバー位置と直近の出目：",
+            " 港の有無：",
+            " 相手の手札枚数：",
             "",
-            "おすすめ交渉(上位2)",
+            "おすすめ交渉（上位2）",
             "1) 相手：(Px)",
-            "   もらう：(資源)",
-            "   出す：(資源)",
-            "   自分の得：(1行)",
-            "   相手の得：(1行)",
-            "   注意：(1行)",
-            "   成功率見込み：(0.xx)",
+            "    受：(資源)",
+            "    譲：(資源)",
+            "    自分の得：(1行)",
+            "    相手の得：(1行)",
+            "    注意：(1行)",
+            "    成功率見込み：(0.xx)",
             "",
-            "   カウンターされたら(許容範囲)",
-            "   - 上限：(出してよい最大)",
-            "   - NG：(絶対出さないもの)",
+            "   許容範囲",
+            "    上限：(出してよい最大)",
+            "    NG：(絶対出さないもの)",
             "",
             "2) 相手：(Py)",
-            "   もらう：(資源)",
-            "   出す：(資源)",
-            "   自分の得：(1行)",
-            "   相手の得：(1行)",
-            "   注意：(1行)",
-            "   成功率見込み：(0.xx)",
+            "    受：(資源)",
+            "    譲：(資源)",
+            "    自分の得：(1行)",
+            "    相手の得：(1行)",
+            "    注意：(1行)",
+            "    成功率見込み：(0.xx)",
             "",
-            "他の候補(短く)",
-            "- (Pz) (もらう)←(出す) ：(狙い1行)",
-            "- (Pz) (もらう)←(出す) ：(狙い1行)",
+            "他の候補",
+            " (Pz) (受)←(譲)：(狙い1行)",
+            " (Pz) (受)←(譲)：(狙い1行)",
             "",
         ]
     )
     prompt_with_instructions = f"{prompt}\n\n{instructions}"
+    human_colors = context.get("human_colors") or []
+    playable_actions = context.get("playable_actions") or []
+    logging.info(
+        "Negotiation prompt ready: model=%s temp=%s board_image=%s prompt_chars=%d humans=%s playable_actions=%d",
+        model,
+        temperature if temperature is not None else "default",
+        bool(board_image_data_url),
+        len(prompt_with_instructions),
+        ",".join(human_colors) if human_colors else "(none)",
+        len(playable_actions),
+    )
     if board_image_data_url:
         prompt_with_instructions += (
             "\n\n盤面JPEGも参照できます。テンプレ内で必要な箇所に画像の情報を1行程度で織り込み、画像を確認したと分かる短い一言を添えてください。"
@@ -276,6 +289,12 @@ def generate_negotiation_advice(
         }
         if temperature is not None:
             request_kwargs["temperature"] = temperature
+        logging.info(
+            "Negotiation advice request -> model=%s temp=%s board_image=%s",
+            request_kwargs.get("model"),
+            request_kwargs.get("temperature", "default"),
+            bool(board_image_data_url),
+        )
         try:
             response = client.chat.completions.create(**request_kwargs)
         except OpenAIError as exc:
@@ -283,14 +302,27 @@ def generate_negotiation_advice(
                 temperature is not None
                 and getattr(exc, "code", None) == "unsupported_value"
             ):
+                logging.warning(
+                    "Negotiation advice temperature unsupported (temp=%s). Retrying without it.",
+                    temperature,
+                )
                 request_kwargs.pop("temperature", None)
                 response = client.chat.completions.create(**request_kwargs)
             else:
                 raise
     except OpenAIError as exc:
+        logging.exception("Negotiation advice OpenAI error: %s", exc)
         raise NegotiationAdviceError(str(exc)) from exc
 
     choices = getattr(response, "choices", [])
+    usage = getattr(response, "usage", None)
+    finish_reason = choices[0].finish_reason if choices else None
+    logging.info(
+        "Negotiation advice response <- choices=%d finish=%s usage=%s",
+        len(choices),
+        finish_reason,
+        usage,
+    )
     if not choices:
         raise NegotiationAdviceError("OpenAI API response did not include any choices.")
 
