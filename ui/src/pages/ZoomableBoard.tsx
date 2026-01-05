@@ -89,6 +89,7 @@ type ZoomableBoardProps = {
   actionExecutor?: (action: GameAction) => Promise<GameState>;
   actionsDisabled?: boolean;
   playerColorOverride?: Color | null;
+  highlightedRollNumber?: number | null;
 };
 
 export default function ZoomableBoard({
@@ -97,6 +98,7 @@ export default function ZoomableBoard({
   actionExecutor,
   actionsDisabled = false,
   playerColorOverride,
+  highlightedRollNumber = null,
 }: ZoomableBoardProps) {
   const { gameId } = useParams();
   const effectiveGameId = gameIdOverride ?? gameId;
@@ -280,6 +282,7 @@ export default function ZoomableBoard({
             recentNodeId={recentNodeId}
             recentEdgeId={recentEdgeId}
             recentRobberCoordinate={recentRobberCoordinate}
+            highlightedRollNumber={highlightedRollNumber}
           />
         </TransformComponent>
       </div>

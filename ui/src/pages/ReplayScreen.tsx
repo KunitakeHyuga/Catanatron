@@ -25,6 +25,10 @@ function ReplayScreen() {
   const [stateIndex, setStateIndex] = useState<number>(0);
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
     useRollDisplay(state.gameState);
+  const rollForHighlight = overlayRoll ?? displayRoll;
+  const highlightedRollNumber = rollForHighlight
+    ? rollForHighlight[0] + rollForHighlight[1]
+    : null;
 
   const handlePrevState = () => setStateIndex((prev) => Math.max(prev - 1, 0));
   const handleNextState = () => setStateIndex((prev) => Math.min(prev + 1, latestStateIndex));
@@ -80,7 +84,7 @@ function ReplayScreen() {
         currentColorClass={turnPillClass}
         onComplete={finalizeOverlay}
       />
-      <ZoomableBoard replayMode={true} />
+      <ZoomableBoard replayMode={true} highlightedRollNumber={highlightedRollNumber} />
       <LeftDrawer />
       <RightDrawer>
         <DiceDisplay roll={displayRoll} />

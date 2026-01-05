@@ -92,6 +92,10 @@ export default function PvpRoomPage() {
     overlayVisible,
     finalizeOverlay,
   } = useRollDisplay(state.gameState);
+  const rollForHighlight = overlayRoll ?? displayRoll;
+  const highlightedRollNumber = rollForHighlight
+    ? rollForHighlight[0] + rollForHighlight[1]
+    : null;
 
   const saveSession = useCallback(
     (info: { token: string; user_name: string; seat_color: Color }) => {
@@ -442,6 +446,7 @@ export default function PvpRoomPage() {
             actionExecutor={submitAction}
             actionsDisabled={!isMyTurn}
             playerColorOverride={seatColor}
+            highlightedRollNumber={highlightedRollNumber}
           />
           <div className="pvp-actions-floating">
             <ActionsToolbar

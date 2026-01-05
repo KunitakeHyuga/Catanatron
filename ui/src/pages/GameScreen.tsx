@@ -207,6 +207,10 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
 
   const { displayRoll, overlayRoll, overlayVisible, finalizeOverlay } =
     useRollDisplay(state.gameState);
+  const rollForHighlight = overlayRoll ?? displayRoll;
+  const highlightedRollNumber = rollForHighlight
+    ? rollForHighlight[0] + rollForHighlight[1]
+    : null;
   useSoundEffects(state.gameState, soundEnabled);
 
   useEffect(() => {
@@ -290,6 +294,7 @@ function GameScreen({ replayMode }: { replayMode: boolean }) {
       <ZoomableBoard
         replayMode={replayMode}
         actionExecutor={executePlayerAction}
+        highlightedRollNumber={highlightedRollNumber}
       />
       <div className="game-actions-floating">
         <ActionsToolbar

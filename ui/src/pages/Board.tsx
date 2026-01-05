@@ -47,6 +47,7 @@ type BoardProps = {
   recentNodeId?: number | null;
   recentEdgeId?: EdgeId | null;
   recentRobberCoordinate?: TileCoordinate | null;
+  highlightedRollNumber?: number | null;
 }
 
 export default function Board({
@@ -66,6 +67,7 @@ export default function Board({
   recentNodeId = null,
   recentEdgeId = null,
   recentRobberCoordinate = null,
+  highlightedRollNumber = null,
 }: BoardProps) {
   // TODO: Keep in sync with CSS
   const containerHeight = fitContainer ? height : height - 144 - 38 - 40;
@@ -82,6 +84,10 @@ export default function Board({
       coordinate.every(
         (value, index) => value === recentRobberCoordinate[index]
       );
+    const diceHighlight =
+      highlightedRollNumber !== null &&
+      tile.type === "RESOURCE_TILE" &&
+      tile.number === highlightedRollNumber;
     return (
       <Tile
         key={`${coordinate}`}
@@ -92,6 +98,7 @@ export default function Board({
         flashing={isMovingRobber}
         onClick={() => handleTileClick(coordinate)}
         robberHighlight={robberRecentlyMoved}
+        diceHighlight={diceHighlight}
       />
     );
   });

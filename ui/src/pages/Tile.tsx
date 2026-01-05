@@ -138,6 +138,7 @@ type TileProps = {
   onClick: React.MouseEventHandler<HTMLDivElement>;
   flashing: boolean;
   robberHighlight?: boolean;
+  diceHighlight?: boolean;
 };
 
 export default function Tile({
@@ -148,6 +149,7 @@ export default function Tile({
   onClick,
   flashing,
   robberHighlight = false,
+  diceHighlight = false,
 }: TileProps) {
   const w = SQRT3 * size;
   const h = 2 * size;
@@ -169,7 +171,10 @@ export default function Tile({
   return (
     <div
       key={coordinate}
-      className={cn("tile", { "robber-highlight": robberHighlight })}
+      className={cn("tile", {
+        "robber-highlight": robberHighlight,
+        "dice-highlight": diceHighlight,
+      })}
       style={{
         left: x - w / 2,
         top: y - h / 2,
