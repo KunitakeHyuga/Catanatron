@@ -21,6 +21,7 @@ type NumberTokenProps = {
   className?: string;
   style?: Partial<React.CSSProperties>;
   flashing?: boolean;
+  diceHighlight?: boolean;
 };
 
 export function NumberToken({
@@ -28,11 +29,15 @@ export function NumberToken({
   className,
   style,
   flashing,
+  diceHighlight = false,
 }: NumberTokenProps) {
   return (
     <Paper
       elevation={3}
-      className={cn("number-token", className, { flashing: flashing })}
+      className={cn("number-token", className, {
+        flashing: flashing,
+        "dice-hit": diceHighlight,
+      })}
       style={style}
     >
       <div>{number}</div>
@@ -159,7 +164,17 @@ export default function Tile({
   let contents;
   let resourceTile;
   if (tile.type === "RESOURCE_TILE") {
-    contents = <NumberToken number={tile.number} flashing={flashing} />;
+    const numberTokenStyle: React.CSSProperties = {
+      ["--dice-highlight-diameter" as const]: `${Math.min(w, h) / 2}px`,
+    };
+    contents = (
+      <NumberToken
+        number={tile.number}
+        flashing={flashing}
+        diceHighlight={diceHighlight}
+        style={numberTokenStyle}
+      />
+    );
     resourceTile = RESOURCES[tile.resource];
   } else if (tile.type === "DESERT") {
     resourceTile = desertTile;
@@ -173,7 +188,6 @@ export default function Tile({
       key={coordinate}
       className={cn("tile", {
         "robber-highlight": robberHighlight,
-        "dice-highlight": diceHighlight,
       })}
       style={{
         left: x - w / 2,
