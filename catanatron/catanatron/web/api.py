@@ -330,7 +330,12 @@ def negotiation_advice_endpoint(game_id, state_index):
                 "current_color": current_color.value if current_color else None,
             },
         )
-        payload = request_negotiation_advice(game)
+        board_image_data_url = None
+        if request.is_json and request.json:
+            image_candidate = request.json.get("board_image")
+            if isinstance(image_candidate, str) and image_candidate.strip():
+                board_image_data_url = image_candidate
+        payload = request_negotiation_advice(game, board_image_data_url)
         return jsonify({"success": True, **payload})
     except NegotiationAdviceUnavailableError as exp:
         logging.warning("Negotiation advice unavailable: %s", exp)

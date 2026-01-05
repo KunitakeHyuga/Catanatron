@@ -1,6 +1,6 @@
 import pytest
 import json
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 from catanatron.web import create_app
 from catanatron.web.models import db, GameState, get_game_state, upsert_game_state
 from catanatron.models.enums import ActionPrompt
@@ -216,13 +216,16 @@ def test_negotiation_advice_logs_event_and_listed(client):
 
     with patch("catanatron.web.api.request_negotiation_advice") as mock_advice:
         mock_advice.return_value = {"advice": "dummy"}
+        board_payload = "data:image/jpeg;base64,abc123"
         response = client.post(
-            f"/api/games/{game_id}/states/latest/negotiation-advice"
+            f"/api/games/{game_id}/states/latest/negotiation-advice",
+            json={"board_image": board_payload},
         )
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data["success"] is True
     assert data["advice"] == "dummy"
+    mock_advice.assert_called_once_with(ANY, board_payload)
 
     events_resp = client.get(f"/api/games/{game_id}/events")
     assert events_resp.status_code == 200

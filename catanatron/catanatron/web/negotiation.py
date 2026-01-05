@@ -186,13 +186,42 @@ def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
     return prompt, context
 
 
-def generate_negotiation_advice(game: Game) -> Tuple[str, Dict[str, Any]]:
+def generate_negotiation_advice(
+    game: Game, board_image_data_url: str | None = None
+) -> Tuple[str, Dict[str, Any]]:
     client = _get_openai_client()
     prompt, context = _build_prompt(game)
     model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
         "OPENAI_MODEL", "gpt-4o-mini"
     )
     temperature = float(os.environ.get("NEGOTIATION_ADVICE_TEMPERATURE", "0.4"))
+    prompt_with_instructions = prompt + (
+        "\n\nこの交渉支援AIエージェントは、初心者プレイヤーの交渉時に発生する判断負荷を"
+        " (1)状況把握負荷(情報処理)、(2)戦略判断負荷(意思決定)、(3)対人交渉負荷(コミュニケーション)"
+        " の3軸で測定します。アンケート項目(1)〜(15)に対応する10段階評価"
+        "（1=全く負担を感じない、10=非常に大きな負担）の推定値を提示してください。"
+        " 項目(3)(4)(10)は逆転項目であり、負担が小さいほど評価が低くなる点に留意してください。\n"
+        "以下のフォーマットで日本語のテキストを生成してください:\n"
+        "## 判断負荷推定\n"
+        "- 状況把握負荷(情報処理): 数値/10 … (該当項目番号を括弧書きで示し、盤面やログのどの情報が負担や軽減要因か1文で説明)\n"
+        "- 戦略判断負荷(意思決定): 数値/10 … (同上)\n"
+        "- 対人交渉負荷(コミュニケーション): 数値/10 … (同上)\n"
+        "## 交渉アドバイス\n"
+        "1. …（狙い: … / 想定される相手の反応: …）\n"
+        "2. …（狙い: … / 想定される相手の反応: …）\n"
+        "3. …（狙い: … / 想定される相手の反応: …）\n"
+        "交渉アドバイスは人間プレイヤーが交渉で有利になるための具体策を最大3つ、番号付きで述べ、各アドバイスに狙いと想定される相手の反応を含めてください。"
+    )
+    if board_image_data_url:
+        user_content: Any = [
+            {"type": "text", "text": prompt_with_instructions},
+            {
+                "type": "image_url",
+                "image_url": {"url": board_image_data_url, "detail": "low"},
+            },
+        ]
+    else:
+        user_content = prompt_with_instructions
 
     try:
         response = client.chat.completions.create(
@@ -206,24 +235,7 @@ def generate_negotiation_advice(game: Game) -> Tuple[str, Dict[str, Any]]:
                 },
                 {
                     "role": "user",
-                    "content": prompt
-                    + (
-                        "\n\nこの交渉支援AIエージェントは、初心者プレイヤーの交渉時に発生する判断負荷を"
-                        " (1)状況把握負荷(情報処理)、(2)戦略判断負荷(意思決定)、(3)対人交渉負荷(コミュニケーション)"
-                        " の3軸で測定します。アンケート項目(1)〜(15)に対応する10段階評価"
-                        "（1=全く負担を感じない、10=非常に大きな負担）の推定値を提示してください。"
-                        " 項目(3)(4)(10)は逆転項目であり、負担が小さいほど評価が低くなる点に留意してください。\n"
-                        "以下のフォーマットで日本語のテキストを生成してください:\n"
-                        "## 判断負荷推定\n"
-                        "- 状況把握負荷(情報処理): 数値/10 … (該当項目番号を括弧書きで示し、盤面やログのどの情報が負担や軽減要因か1文で説明)\n"
-                        "- 戦略判断負荷(意思決定): 数値/10 … (同上)\n"
-                        "- 対人交渉負荷(コミュニケーション): 数値/10 … (同上)\n"
-                        "## 交渉アドバイス\n"
-                        "1. …（狙い: … / 想定される相手の反応: …）\n"
-                        "2. …（狙い: … / 想定される相手の反応: …）\n"
-                        "3. …（狙い: … / 想定される相手の反応: …）\n"
-                        "交渉アドバイスは人間プレイヤーが交渉で有利になるための具体策を最大3つ、番号付きで述べ、各アドバイスに狙いと想定される相手の反応を含めてください。"
-                    ),
+                    "content": user_content,
                 },
             ],
         )
@@ -241,10 +253,12 @@ def generate_negotiation_advice(game: Game) -> Tuple[str, Dict[str, Any]]:
     return advice.strip(), context
 
 
-def request_negotiation_advice(game: Game) -> Dict[str, Any]:
+def request_negotiation_advice(
+    game: Game, board_image_data_url: str | None = None
+) -> Dict[str, Any]:
     """
     Public helper that hides the raw OpenAI payload and only returns fields that the API
     endpoint should expose.
     """
-    advice, _ = generate_negotiation_advice(game)
+    advice, _ = generate_negotiation_advice(game, board_image_data_url)
     return {"advice": advice}

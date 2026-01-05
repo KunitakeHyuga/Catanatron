@@ -31,3 +31,15 @@
     margin-top: 8px;
   }
 }
+
+.negotiation-board-capture {
+  position: absolute;
+  width: 640px;
+  height: 480px;
+  left: -9999px;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
