@@ -192,30 +192,61 @@ def generate_negotiation_advice(
     client = _get_openai_client()
     prompt, context = _build_prompt(game)
     model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
-        "OPENAI_MODEL", "gpt-4o-mini"
+        "OPENAI_MODEL", "gpt-5"
     )
-    temperature = float(os.environ.get("NEGOTIATION_ADVICE_TEMPERATURE", "0.4"))
-    prompt_with_instructions = prompt + (
-        "\n\nこの交渉支援AIエージェントは、初心者プレイヤーの交渉時に発生する判断負荷を"
-        " (1)状況把握負荷(情報処理)、(2)戦略判断負荷(意思決定)、(3)対人交渉負荷(コミュニケーション)"
-        " の3軸で測定します。アンケート項目(1)〜(15)に対応する10段階評価"
-        "（1=全く負担を感じない、10=非常に大きな負担）の推定値を提示してください。"
-        " 項目(3)(4)(10)は逆転項目であり、負担が小さいほど評価が低くなる点に留意してください。\n"
-        "以下のフォーマットで日本語のテキストを生成してください:\n"
-        "## 判断負荷推定\n"
-        "- 状況把握負荷(情報処理): 数値/10 … (該当項目番号を括弧書きで示し、盤面やログのどの情報が負担や軽減要因か1文で説明)\n"
-        "- 戦略判断負荷(意思決定): 数値/10 … (同上)\n"
-        "- 対人交渉負荷(コミュニケーション): 数値/10 … (同上)\n"
-        "## 交渉アドバイス\n"
-        "1. …（狙い: … / 想定される相手の反応: …）\n"
-        "2. …（狙い: … / 想定される相手の反応: …）\n"
-        "3. …（狙い: … / 想定される相手の反応: …）\n"
-        "交渉アドバイスは人間プレイヤーが交渉で有利になるための具体策を最大3つ、番号付きで述べ、各アドバイスに狙いと想定される相手の反応を含めてください。"
+    temperature_value = os.environ.get("NEGOTIATION_ADVICE_TEMPERATURE", "").strip()
+    temperature: float | None
+    if temperature_value:
+        try:
+            temperature = float(temperature_value)
+        except ValueError:
+            temperature = None
+    else:
+        temperature = None
+    instructions = "\n".join(
+        [
+            "あなたはカタンの交渉支援AIエージェントです。以下のテンプレートを厳守し、日本語で回答してください。",
+            "結論：今は(交渉する/交渉しない). 理由：(最重要1行)",
+            "",
+            "今見るもの(最大5)",
+            "- (例：自分の不足資源)：",
+            "- (例：相手AのVPと最長路/最大騎士)：",
+            "- (例：ロバー位置と直近の出目)：",
+            "- (例：港の有無)：",
+            "- (例：相手の手札枚数)：",
+            "",
+            "おすすめ交渉(上位2)",
+            "1) 相手：(Px)",
+            "   もらう：(資源)",
+            "   出す：(資源)",
+            "   自分の得：(1行)",
+            "   相手の得：(1行)",
+            "   注意：(1行)",
+            "   成功率見込み：(0.xx)",
+            "",
+            "   カウンターされたら(許容範囲)",
+            "   - 上限：(出してよい最大)",
+            "   - NG：(絶対出さないもの)",
+            "",
+            "2) 相手：(Py)",
+            "   もらう：(資源)",
+            "   出す：(資源)",
+            "   自分の得：(1行)",
+            "   相手の得：(1行)",
+            "   注意：(1行)",
+            "   成功率見込み：(0.xx)",
+            "",
+            "他の候補(短く)",
+            "- (Pz) (もらう)←(出す) ：(狙い1行)",
+            "- (Pz) (もらう)←(出す) ：(狙い1行)",
+            "",
+        ]
     )
+    prompt_with_instructions = f"{prompt}\n\n{instructions}"
     if board_image_data_url:
         prompt_with_instructions += (
-            "\n\n添付した盤面JPEGを観察してから回答してください。画像が確認できたら、出力の先頭に"
-            " `### 盤面画像の気づき: ...` という1文を追加し、画像から読み取れた特徴や懸念点を述べてください。"
+            "\n\n盤面JPEGも参照できます。テンプレ内で必要な箇所に画像の情報を1行程度で織り込み、画像を確認したと分かる短い一言を添えてください。"
+            " 画像専用の詳細セクションを追加する必要はありません。"
         )
     if board_image_data_url:
         user_content: Any = [
@@ -229,10 +260,9 @@ def generate_negotiation_advice(
         user_content = prompt_with_instructions
 
     try:
-        response = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            messages=[
+        request_kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": [
                 {
                     "role": "system",
                     "content": "You are an expert Settlers of Catan negotiation coach. "
@@ -243,7 +273,20 @@ def generate_negotiation_advice(
                     "content": user_content,
                 },
             ],
-        )
+        }
+        if temperature is not None:
+            request_kwargs["temperature"] = temperature
+        try:
+            response = client.chat.completions.create(**request_kwargs)
+        except OpenAIError as exc:
+            if (
+                temperature is not None
+                and getattr(exc, "code", None) == "unsupported_value"
+            ):
+                request_kwargs.pop("temperature", None)
+                response = client.chat.completions.create(**request_kwargs)
+            else:
+                raise
     except OpenAIError as exc:
         raise NegotiationAdviceError(str(exc)) from exc
 
