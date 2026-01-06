@@ -36,6 +36,27 @@ const DEV_CARD_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\broad building\b/gi, "街道建設"],
 ];
 
+type HighlightRule = {
+  className: string;
+};
+
+const HIGHLIGHT_MAP: Record<string, HighlightRule> = {
+  赤: { className: "player-red" },
+  青: { className: "player-blue" },
+  白: { className: "player-white" },
+  オレンジ: { className: "player-orange" },
+  木材: { className: "resource-wood" },
+  レンガ: { className: "resource-brick" },
+  羊毛: { className: "resource-sheep" },
+  小麦: { className: "resource-wheat" },
+  鉱石: { className: "resource-ore" },
+};
+
+const HIGHLIGHT_PATTERN = new RegExp(
+  `(${Object.keys(HIGHLIGHT_MAP).join("|")})`,
+  "g"
+);
+
 function extractNegotiationSections(text: string): string {
   const adviceHeading = "## 交渉アドバイス";
   const imageHeading = "### 盤面画像の気づき";
@@ -95,6 +116,39 @@ function localizeAdviceText(text: string): string {
     }
   );
   return output.trim();
+}
+
+function renderAdviceContent(advice: string) {
+  if (!advice) {
+    return advice;
+  }
+  const lines = advice.split("\n");
+  return lines.map((line, lineIndex) => {
+    const segments = line.split(HIGHLIGHT_PATTERN);
+    const renderedSegments = segments.map((segment, segmentIndex) => {
+      if (!segment) {
+        return segment;
+      }
+      const highlight = HIGHLIGHT_MAP[segment];
+      if (highlight) {
+        return (
+          <span
+            key={`seg-${lineIndex}-${segmentIndex}`}
+            className={`advice-chip ${highlight.className}`}
+          >
+            {segment}
+          </span>
+        );
+      }
+      return segment;
+    });
+    return (
+      <span key={`line-${lineIndex}`}>
+        {renderedSegments}
+        {lineIndex < lines.length - 1 ? <br /> : null}
+      </span>
+    );
+  });
 }
 
 type NegotiationAdviceBoxProps = {
@@ -226,7 +280,7 @@ export default function NegotiationAdviceBox({
         {error && <div className="error-message">{error}</div>}
 
         {advice ? (
-          <div className="advice-output">{advice}</div>
+          <div className="advice-output">{renderAdviceContent(advice)}</div>
         ) : (
           <p className="advice-placeholder">
             盤面と直近の行動ログをChatGPTに送り、トレードや交渉のヒントを取得します。
