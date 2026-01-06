@@ -115,6 +115,11 @@ function localizeAdviceText(text: string): string {
       output = output.replace(pattern, replacement);
     }
   );
+  output = output.replace(/おすすめ交渉（上位2）/g, "おすすめの交渉");
+  output = output.replace(/おすすめ交渉\(上位2\)/g, "おすすめの交渉");
+  output = output.replace(/おすすめ交渉/g, "おすすめの交渉");
+  output = output.replace(/^\s*1\)\s*/gm, "① ");
+  output = output.replace(/^\s*2\)\s*/gm, "② ");
   return output.trim();
 }
 
