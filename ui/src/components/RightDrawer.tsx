@@ -1,5 +1,7 @@
 import {
   useCallback,
+  createContext,
+  useMemo,
   useContext,
   useEffect,
   useState,
@@ -25,6 +27,13 @@ const DEFAULT_DESKTOP_WIDTH = 340;
 const MIN_DESKTOP_WIDTH = 260;
 const MAX_DESKTOP_WIDTH = 600;
 
+type RightDrawerSizingContextValue = {
+  requestWidth: (width: number) => void;
+};
+
+export const RightDrawerSizingContext =
+  createContext<RightDrawerSizingContextValue | null>(null);
+
 function clampDesktopWidth(value: number): number {
   const viewportCap =
     typeof window === "undefined"
@@ -41,6 +50,14 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
     clampDesktopWidth(DEFAULT_DESKTOP_WIDTH)
   );
   const [isResizing, setIsResizing] = useState(false);
+  const sizingContextValue = useMemo(
+    () => ({
+      requestWidth: (width: number) => {
+        setDesktopWidth(clampDesktopWidth(width));
+      },
+    }),
+    []
+  );
 
   const openRightDrawer = useCallback(
     (event: InteractionEvent) => {
@@ -148,46 +165,51 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
   );
 
   return (
-    <>
-      <Hidden breakpoint={{ size: "lg", direction: "up" }} implementation="js">
-        <SwipeableDrawer
-          className="right-drawer"
-          anchor="right"
-          open={state.isRightDrawerOpen}
-          onClose={closeRightDrawer}
-          onOpen={openRightDrawer}
-          disableBackdropTransition={!iOS}
-          disableDiscovery={iOS}
-          onKeyDown={closeRightDrawer}
+    <RightDrawerSizingContext.Provider value={sizingContextValue}>
+      <>
+        <Hidden breakpoint={{ size: "lg", direction: "up" }} implementation="js">
+          <SwipeableDrawer
+            className="right-drawer"
+            anchor="right"
+            open={state.isRightDrawerOpen}
+            onClose={closeRightDrawer}
+            onOpen={openRightDrawer}
+            disableBackdropTransition={!iOS}
+            disableDiscovery={iOS}
+            onKeyDown={closeRightDrawer}
+          >
+            {renderDrawerContent(false)}
+          </SwipeableDrawer>
+        </Hidden>
+        <Hidden
+          breakpoint={{ size: "md", direction: "down" }}
+          implementation="css"
         >
-          {renderDrawerContent(false)}
-        </SwipeableDrawer>
-      </Hidden>
-      <Hidden breakpoint={{ size: "md", direction: "down" }} implementation="css">
-        <Drawer
-          className="right-drawer"
-          anchor="right"
-          variant="permanent"
-          open
-          PaperProps={{ style: { width: `${desktopWidth}px` } }}
-        >
-          <div className="drawer-shell">
-            <div
-              className={`drawer-resize-handle${
-                isResizing ? " is-resizing" : ""
-              }`}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="右側パネルの幅を調整"
-              onMouseDown={handleResizeStart}
-              onTouchStart={handleResizeStart}
-            >
-              <span className="handle-grip" />
+          <Drawer
+            className="right-drawer"
+            anchor="right"
+            variant="permanent"
+            open
+            PaperProps={{ style: { width: `${desktopWidth}px` } }}
+          >
+            <div className="drawer-shell">
+              <div
+                className={`drawer-resize-handle${
+                  isResizing ? " is-resizing" : ""
+                }`}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="右側パネルの幅を調整"
+                onMouseDown={handleResizeStart}
+                onTouchStart={handleResizeStart}
+              >
+                <span className="handle-grip" />
+              </div>
+              {renderDrawerContent(true)}
             </div>
-            {renderDrawerContent(true)}
-          </div>
-        </Drawer>
-      </Hidden>
-    </>
+          </Drawer>
+        </Hidden>
+      </>
+    </RightDrawerSizingContext.Provider>
   );
 }

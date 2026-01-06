@@ -1,4 +1,4 @@
-import { useCallback, useContext, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { Button, CircularProgress } from "@mui/material";
 import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
@@ -12,6 +12,7 @@ import { store } from "../store";
 import type { GameState } from "../utils/api.types";
 import CollapsibleSection from "./CollapsibleSection";
 import BoardSnapshot from "./BoardSnapshot";
+import { RightDrawerSizingContext } from "./RightDrawer";
 
 import "./AnalysisBox.scss";
 import "./NegotiationAdviceBox.scss";
@@ -123,6 +124,40 @@ function localizeAdviceText(text: string): string {
   return output.trim();
 }
 
+function measureAdviceWidth(adviceElement: HTMLDivElement): number | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const container = document.createElement("div");
+  container.className = "negotiation-box";
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.visibility = "hidden";
+  container.style.pointerEvents = "none";
+
+  const clone = adviceElement.cloneNode(true) as HTMLDivElement;
+  clone.style.whiteSpace = "pre";
+  clone.style.width = "max-content";
+  clone.style.maxWidth = "none";
+  clone.style.display = "inline-block";
+
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  const adviceWidth = clone.getBoundingClientRect().width;
+  document.body.removeChild(container);
+
+  const drawerContent = adviceElement.closest(".drawer-content");
+  if (!drawerContent) {
+    return adviceWidth;
+  }
+  const style = window.getComputedStyle(drawerContent);
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+  return adviceWidth + paddingLeft + paddingRight + 16;
+}
+
 function renderAdviceContent(advice: string) {
   if (!advice) {
     return advice;
@@ -169,12 +204,14 @@ export default function NegotiationAdviceBox({
 }: NegotiationAdviceBoxProps) {
   const { gameId: routeGameId } = useParams();
   const { state } = useContext(store);
+  const drawerSizing = useContext(RightDrawerSizingContext);
   const [advice, setAdvice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const gameId = gameIdOverride ?? routeGameId ?? undefined;
   const currentGameState = gameStateOverride ?? state.gameState;
   const boardSnapshotRef = useRef<HTMLDivElement | null>(null);
+  const adviceOutputRef = useRef<HTMLDivElement | null>(null);
 
   const captureBoardImage = useCallback(async () => {
     if (!boardSnapshotRef.current) {
@@ -264,6 +301,16 @@ export default function NegotiationAdviceBox({
     </span>
   );
 
+  useEffect(() => {
+    if (!advice || !drawerSizing || !adviceOutputRef.current) {
+      return;
+    }
+    const measuredWidth = measureAdviceWidth(adviceOutputRef.current);
+    if (measuredWidth) {
+      drawerSizing.requestWidth(measuredWidth);
+    }
+  }, [advice, drawerSizing]);
+
   return (
     <>
       <CollapsibleSection
@@ -285,7 +332,9 @@ export default function NegotiationAdviceBox({
         {error && <div className="error-message">{error}</div>}
 
         {advice ? (
-          <div className="advice-output">{renderAdviceContent(advice)}</div>
+          <div className="advice-output" ref={adviceOutputRef}>
+            {renderAdviceContent(advice)}
+          </div>
         ) : (
           <p className="advice-placeholder">
             盤面と直近の行動ログをChatGPTに送り、トレードや交渉のヒントを取得します。
