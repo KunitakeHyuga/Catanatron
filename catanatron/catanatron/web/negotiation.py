@@ -234,7 +234,6 @@ def generate_negotiation_advice(
             "   許容範囲",
             "    上限：(出してよい最大)",
             "    NG：(絶対出さないもの)",
-            "",
             "----------------------------",
             "② 相手：(Py)",
             "    受：(資源)",
@@ -247,7 +246,7 @@ def generate_negotiation_advice(
             "   許容範囲",
             "    上限：(出してよい最大)",
             "    NG：(絶対出さないもの)",
-            "",
+            "----------------------------",
         ]
     )
     prompt_with_instructions = f"{prompt}\n\n{instructions}"
