@@ -1,4 +1,14 @@
-import { useCallback, useContext, type PropsWithChildren } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import type {
+  PropsWithChildren,
+  MouseEvent as ReactMouseEvent,
+  TouchEvent as ReactTouchEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import Drawer from "@mui/material/Drawer";
@@ -11,9 +21,26 @@ import ACTIONS from "../actions";
 
 import "./RightDrawer.scss";
 
+const DEFAULT_DESKTOP_WIDTH = 340;
+const MIN_DESKTOP_WIDTH = 260;
+const MAX_DESKTOP_WIDTH = 600;
+
+function clampDesktopWidth(value: number): number {
+  const viewportCap =
+    typeof window === "undefined"
+      ? MAX_DESKTOP_WIDTH
+      : Math.round(window.innerWidth * 0.9);
+  const effectiveMax = Math.min(MAX_DESKTOP_WIDTH, viewportCap);
+  return Math.max(MIN_DESKTOP_WIDTH, Math.min(value, effectiveMax));
+}
+
 export default function RightDrawer( { children }: PropsWithChildren ) {
   const { state, dispatch } = useContext(store);
   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const [desktopWidth, setDesktopWidth] = useState(() =>
+    clampDesktopWidth(DEFAULT_DESKTOP_WIDTH)
+  );
+  const [isResizing, setIsResizing] = useState(false);
 
   const openRightDrawer = useCallback(
     (event: InteractionEvent) => {
@@ -37,6 +64,89 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
     [dispatch]
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const handleWindowResize = () => {
+      setDesktopWidth((prev) => clampDesktopWidth(prev));
+    };
+    window.addEventListener("resize", handleWindowResize);
+    return () => {
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, []);
+
+  const handleResizeStart = useCallback(
+    (
+      event:
+        | ReactMouseEvent<HTMLDivElement>
+        | ReactTouchEvent<HTMLDivElement>
+    ) => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if ("button" in event && event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      const startClientX =
+        "touches" in event ? event.touches[0]?.clientX ?? 0 : event.clientX;
+      const startWidth = desktopWidth;
+      setIsResizing(true);
+
+      const updateWidthFromClientX = (clientX: number) => {
+        const delta = startClientX - clientX;
+        setDesktopWidth(clampDesktopWidth(startWidth + delta));
+      };
+
+      const handleMouseMove = (moveEvent: globalThis.MouseEvent) => {
+        updateWidthFromClientX(moveEvent.clientX);
+        moveEvent.preventDefault();
+      };
+
+      const handleTouchMove = (moveEvent: globalThis.TouchEvent) => {
+        if (moveEvent.touches.length === 0) {
+          return;
+        }
+        updateWidthFromClientX(moveEvent.touches[0].clientX);
+        moveEvent.preventDefault();
+      };
+
+      const stopResizing = () => {
+        setIsResizing(false);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", stopResizing);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", stopResizing);
+        window.removeEventListener("touchcancel", stopResizing);
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", stopResizing);
+      window.addEventListener("touchmove", handleTouchMove, { passive: false });
+      window.addEventListener("touchend", stopResizing);
+      window.addEventListener("touchcancel", stopResizing);
+    },
+    [desktopWidth]
+  );
+
+  const renderDrawerContent = (fullWidthButton: boolean) => (
+    <div className="drawer-content">
+      <Button
+        component={Link}
+        to="/"
+        variant="contained"
+        color="secondary"
+        className="drawer-home-btn"
+        fullWidth={fullWidthButton}
+      >
+        ホームに戻る
+      </Button>
+      {children}
+    </div>
+  );
+
   return (
     <>
       <Hidden breakpoint={{ size: "lg", direction: "up" }} implementation="js">
@@ -50,18 +160,7 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
           disableDiscovery={iOS}
           onKeyDown={closeRightDrawer}
         >
-          <div className="drawer-content">
-            <Button
-              component={Link}
-              to="/"
-              variant="contained"
-              color="secondary"
-              className="drawer-home-btn"
-            >
-              ホームに戻る
-            </Button>
-            {children}
-          </div>
+          {renderDrawerContent(false)}
         </SwipeableDrawer>
       </Hidden>
       <Hidden breakpoint={{ size: "md", direction: "down" }} implementation="css">
@@ -70,19 +169,22 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
           anchor="right"
           variant="permanent"
           open
+          PaperProps={{ style: { width: `${desktopWidth}px` } }}
         >
-          <div className="drawer-content">
-            <Button
-              component={Link}
-              to="/"
-              variant="contained"
-              color="secondary"
-              className="drawer-home-btn"
-              fullWidth
+          <div className="drawer-shell">
+            <div
+              className={`drawer-resize-handle${
+                isResizing ? " is-resizing" : ""
+              }`}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="右側パネルの幅を調整"
+              onMouseDown={handleResizeStart}
+              onTouchStart={handleResizeStart}
             >
-              ホームに戻る
-            </Button>
-            {children}
+              <span className="handle-grip" />
+            </div>
+            {renderDrawerContent(true)}
           </div>
         </Drawer>
       </Hidden>
