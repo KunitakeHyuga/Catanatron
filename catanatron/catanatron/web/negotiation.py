@@ -192,9 +192,11 @@ def generate_negotiation_advice(
 ) -> Tuple[str, Dict[str, Any]]:
     client = _get_openai_client()
     prompt, context = _build_prompt(game)
-    model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
-        "OPENAI_MODEL", "gpt-5"
+    fallback_model = os.environ.get("NEGOTIATION_ADVICE_FALLBACK_MODEL", "gpt-4o-mini")
+    preferred_model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
+        "OPENAI_MODEL"
     )
+    model = preferred_model or fallback_model
     temperature_value = os.environ.get("NEGOTIATION_ADVICE_TEMPERATURE", "").strip()
     temperature: float | None
     if temperature_value:
@@ -295,19 +297,30 @@ def generate_negotiation_advice(
             request_kwargs.get("temperature", "default"),
             bool(board_image_data_url),
         )
+        def _execute_request() -> Any:
+            return client.chat.completions.create(**request_kwargs)
+
         try:
-            response = client.chat.completions.create(**request_kwargs)
+            response = _execute_request()
         except OpenAIError as exc:
-            if (
-                temperature is not None
-                and getattr(exc, "code", None) == "unsupported_value"
-            ):
+            error_code = getattr(exc, "code", None)
+            if temperature is not None and error_code == "unsupported_value":
                 logging.warning(
                     "Negotiation advice temperature unsupported (temp=%s). Retrying without it.",
                     temperature,
                 )
                 request_kwargs.pop("temperature", None)
-                response = client.chat.completions.create(**request_kwargs)
+                response = _execute_request()
+            elif error_code == "model_not_found" and request_kwargs.get(
+                "model"
+            ) != fallback_model:
+                logging.warning(
+                    "Negotiation advice model '%s' not found. Falling back to '%s'.",
+                    request_kwargs.get("model"),
+                    fallback_model,
+                )
+                request_kwargs["model"] = fallback_model
+                response = _execute_request()
             else:
                 raise
     except OpenAIError as exc:

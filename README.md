@@ -85,7 +85,8 @@ Web UI 右側のドロワーに「交渉アドバイス」ボタンが追加さ�
 | 変数 | 説明 |
 | --- | --- |
 | `OPENAI_API_KEY` | 必須。ChatGPT（OpenAI API）のキー。 |
-| `NEGOTIATION_ADVICE_MODEL` | 任意。利用するモデル名（未設定時は `OPENAI_MODEL` → `gpt-4o-mini` の順に利用）。 |
+| `NEGOTIATION_ADVICE_MODEL` | 任意。利用するモデル名（未設定時は `OPENAI_MODEL` → `NEGOTIATION_ADVICE_FALLBACK_MODEL` の順に利用）。 |
+| `NEGOTIATION_ADVICE_FALLBACK_MODEL` | 任意。指定モデルが利用不可だった場合に自動で使うバックアップ（デフォルト `gpt-4o-mini`）。 |
 | `NEGOTIATION_ADVICE_TEMPERATURE` | 任意。応答の温度。デフォルト `0.4`。 |
 | `NEGOTIATION_LOG_LIMIT` | 任意。プロンプトに含める直近行動ログの件数（デフォルト 32）。 |
 
