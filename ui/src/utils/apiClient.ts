@@ -26,8 +26,9 @@ export type PvpRoom = {
 
 export type PvpJoinResponse = {
   token: string;
-  seat_color: Color;
+  seat_color: Color | null;
   user_name: string;
+  is_spectator: boolean;
   room: PvpRoom;
 };
 

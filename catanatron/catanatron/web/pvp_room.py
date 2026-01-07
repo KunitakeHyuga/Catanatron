@@ -105,7 +105,7 @@ class SessionInfo:
     token: str
     user_name: str
     room_id: str
-    seat_color: str
+    seat_color: Optional[str]
 
 
 class _SessionStore:
@@ -113,7 +113,9 @@ class _SessionStore:
         self._lock = threading.RLock()
         self._sessions: Dict[str, SessionInfo] = {}
 
-    def issue(self, user_name: str, room_id: str, seat_color: str) -> SessionInfo:
+    def issue(
+        self, user_name: str, room_id: str, seat_color: Optional[str]
+    ) -> SessionInfo:
         token = uuid4().hex
         info = SessionInfo(
             token=token, user_name=user_name, room_id=room_id, seat_color=seat_color
@@ -140,8 +142,6 @@ def join_room(room_id: str, user_name: str) -> Dict:
     user_name = user_name.strip()
 
     room = _ensure_room(room_id, for_update=True)
-    if room.started:
-        abort(400, description="このルームはすでにゲームが開始されています。")
 
     seats: List[Dict[str, Optional[str]]] = json.loads(json.dumps(room.seats))
 
@@ -153,8 +153,20 @@ def join_room(room_id: str, user_name: str) -> Dict:
                 "token": info.token,
                 "seat_color": info.seat_color,
                 "user_name": info.user_name,
+                "is_spectator": False,
                 "room": _serialize_room(room, info),
             }
+
+    if room.started:
+        info = session_store.issue(user_name, room.room_id, None)
+        db.session.commit()
+        return {
+            "token": info.token,
+            "seat_color": info.seat_color,
+            "user_name": info.user_name,
+            "is_spectator": True,
+            "room": _serialize_room(room, info),
+        }
 
     for seat in seats:
         if seat["user_name"] is None:
@@ -167,24 +179,34 @@ def join_room(room_id: str, user_name: str) -> Dict:
                 "token": info.token,
                 "seat_color": info.seat_color,
                 "user_name": info.user_name,
+                "is_spectator": False,
                 "room": _serialize_room(room, info),
             }
 
-    abort(409, description="これ以上参加できません。")
+    info = session_store.issue(user_name, room.room_id, None)
+    db.session.commit()
+    return {
+        "token": info.token,
+        "seat_color": info.seat_color,
+        "user_name": info.user_name,
+        "is_spectator": True,
+        "room": _serialize_room(room, info),
+    }
 
 
 def leave_room(session: SessionInfo) -> Dict:
     room = _ensure_room(session.room_id, for_update=True)
-    if room.started:
+    if room.started and session.seat_color is not None:
         abort(400, description="ゲーム進行中は退出できません。")
 
-    seats = json.loads(json.dumps(room.seats))
-    for seat in seats:
-        if seat["color"] == session.seat_color:
-            seat["user_name"] = None
-    room.seats = seats
-    db.session.add(room)
-    db.session.commit()
+    if session.seat_color is not None:
+        seats = json.loads(json.dumps(room.seats))
+        for seat in seats:
+            if seat["color"] == session.seat_color:
+                seat["user_name"] = None
+        room.seats = seats
+        db.session.add(room)
+        db.session.commit()
     session_store.revoke(session.token)
     return _serialize_room(room)
 
@@ -261,6 +283,9 @@ def submit_action(
     room = _ensure_room(session.room_id, for_update=True)
     if not room.started or room.game_id is None:
         abort(400, description="ゲームが開始されていません。")
+
+    if session.seat_color is None:
+        abort(403, description="観戦者は操作できません。")
 
     game = get_game_state(room.game_id)
     current_color = game.state.current_color().value

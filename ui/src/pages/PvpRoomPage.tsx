@@ -22,7 +22,7 @@ import LeftDrawer from "../components/LeftDrawer";
 import RightDrawer from "../components/RightDrawer";
 import { store } from "../store";
 import ACTIONS from "../actions";
-import { dispatchSnackbar } from "../components/Snackbar";
+import { dispatchSnackbar, snackbarActions } from "../components/Snackbar";
 import useRollDisplay from "../hooks/useRollDisplay";
 import { colorLabel } from "../utils/i18n";
 import useSoundEffects from "../hooks/useSoundEffects";
@@ -75,11 +75,26 @@ export default function PvpRoomPage() {
       ? window.localStorage.getItem(buildStorageKey(NAME_PREFIX, roomId)) ?? ""
       : ""
   );
+  const parseSeatColor = (value: string | null): Color | null => {
+    if (!value) {
+      return null;
+    }
+    const normalized = value.toUpperCase();
+    if (
+      normalized === "RED" ||
+      normalized === "BLUE" ||
+      normalized === "WHITE" ||
+      normalized === "ORANGE"
+    ) {
+      return normalized as Color;
+    }
+    return null;
+  };
   const [seatColor, setSeatColor] = useState<Color | null>(() =>
     typeof window !== "undefined"
-      ? (window.localStorage.getItem(
-          buildStorageKey(COLOR_PREFIX, roomId)
-        ) as Color | null)
+      ? parseSeatColor(
+          window.localStorage.getItem(buildStorageKey(COLOR_PREFIX, roomId))
+        )
       : null
   );
   const [joinDialogOpen, setJoinDialogOpen] = useState(!token);
@@ -112,7 +127,7 @@ export default function PvpRoomPage() {
   }, []);
 
   const saveSession = useCallback(
-    (info: { token: string; user_name: string; seat_color: Color }) => {
+    (info: { token: string; user_name: string; seat_color: Color | null }) => {
       if (typeof window === "undefined") {
         return;
       }
@@ -124,10 +139,14 @@ export default function PvpRoomPage() {
         buildStorageKey(NAME_PREFIX, roomId),
         info.user_name
       );
-      window.localStorage.setItem(
-        buildStorageKey(COLOR_PREFIX, roomId),
-        info.seat_color
-      );
+      if (info.seat_color) {
+        window.localStorage.setItem(
+          buildStorageKey(COLOR_PREFIX, roomId),
+          info.seat_color
+        );
+      } else {
+        window.localStorage.removeItem(buildStorageKey(COLOR_PREFIX, roomId));
+      }
     },
     [roomId]
   );
@@ -156,6 +175,11 @@ export default function PvpRoomPage() {
             buildStorageKey(COLOR_PREFIX, roomId),
             seat.color
           );
+        }
+      } else {
+        setSeatColor(null);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(buildStorageKey(COLOR_PREFIX, roomId));
         }
       }
     },
@@ -266,6 +290,13 @@ export default function PvpRoomPage() {
       if (!state.gameState) {
         throw new Error("ゲーム状態がありません。");
       }
+      if (!seatColor) {
+        enqueueSnackbar("観戦者は操作できません。", {
+          action: snackbarActions(closeSnackbar),
+          onClick: () => closeSnackbar(),
+        });
+        return state.gameState;
+      }
       try {
         const updated = await postPvpAction(
           roomId,
@@ -287,6 +318,7 @@ export default function PvpRoomPage() {
     [
       token,
       state.gameState,
+      seatColor,
       dispatch,
       enqueueSnackbar,
       closeSnackbar,
@@ -378,6 +410,7 @@ export default function PvpRoomPage() {
   }
 
   const hasSession = Boolean(token);
+  const isSpectator = hasSession && seatColor == null;
   const isHost = roomSeats.find((seat) => seat.is_you)?.color === "RED";
   const showRoomPanel = !roomStatus.started;
   const showLiveGame =
@@ -469,21 +502,23 @@ export default function PvpRoomPage() {
             replayMode={false}
             gameIdOverride={roomStatus.game_id ?? undefined}
             actionExecutor={submitAction}
-            actionsDisabled={!isMyTurn}
+            actionsDisabled={!isMyTurn || isSpectator}
             playerColorOverride={seatColor}
             highlightedRollNumber={highlightedRollNumber}
           />
-          <div className="pvp-actions-floating">
-            <ActionsToolbar
-              isBotThinking={false}
-              replayMode={false}
-              gameIdOverride={roomStatus.game_id ?? undefined}
-              actionExecutor={submitAction}
-              actionsDisabled={!isMyTurn}
-              playerColorOverride={seatColor}
-              showResources={false}
-            />
-          </div>
+          {!isSpectator && (
+            <div className="pvp-actions-floating">
+              <ActionsToolbar
+                isBotThinking={false}
+                replayMode={false}
+                gameIdOverride={roomStatus.game_id ?? undefined}
+                actionExecutor={submitAction}
+                actionsDisabled={!isMyTurn || isSpectator}
+                playerColorOverride={seatColor}
+                showResources={false}
+              />
+            </div>
+          )}
           <LeftDrawer playerNames={playerNames} viewerColor={seatColor} />
           <RightDrawer>
             <div className="drawer-room-info">
@@ -499,20 +534,24 @@ export default function PvpRoomPage() {
               </Button>
             </div>
             <Divider />
-            <TradePanel
-              actionExecutor={submitAction}
-              playerColorOverride={seatColor}
-            />
-            <Divider />
-            {roomStatus.game_id && (
+            {!isSpectator && (
               <>
-                <NegotiationAdviceBox
-                  stateIndex={"latest"}
-                  gameIdOverride={roomStatus.game_id}
-                  gameStateOverride={state.gameState ?? null}
-                  requesterColorOverride={seatColor}
+                <TradePanel
+                  actionExecutor={submitAction}
+                  playerColorOverride={seatColor}
                 />
                 <Divider />
+                {roomStatus.game_id && (
+                  <>
+                    <NegotiationAdviceBox
+                      stateIndex={"latest"}
+                      gameIdOverride={roomStatus.game_id}
+                      gameStateOverride={state.gameState ?? null}
+                      requesterColorOverride={seatColor}
+                    />
+                    <Divider />
+                  </>
+                )}
               </>
             )}
             <DiceDisplay roll={displayRoll} />
