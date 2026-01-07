@@ -294,6 +294,32 @@ export default function TradePanel({
       ) as ConfirmTradeAction[])
     : [];
   const currentTrade = gameState.trade ?? null;
+  const offererIndex =
+    currentTrade && gameState.colors.length > 0
+      ? gameState.colors.indexOf(currentTrade.offerer_color as Color)
+      : -1;
+  const tradeVector =
+    currentTrade && offererIndex >= 0
+      ? ([
+          ...currentTrade.offer,
+          ...currentTrade.request,
+          offererIndex,
+        ] as AcceptTradeAction[2])
+      : null;
+  const canAffordRequest =
+    currentTrade &&
+    availableCounts.length === currentTrade.request.length &&
+    currentTrade.request.every(
+      (count, index) => count <= (availableCounts[index] ?? 0)
+    );
+  const fallbackAcceptAction =
+    awaitingResponse && humanColor && tradeVector && canAffordRequest
+      ? ([humanColor, "ACCEPT_TRADE", tradeVector] as AcceptTradeAction)
+      : undefined;
+  const fallbackRejectAction =
+    awaitingResponse && humanColor && tradeVector
+      ? ([humanColor, "REJECT_TRADE", tradeVector] as RejectTradeAction)
+      : undefined;
   const rawAcceptees = currentTrade?.acceptees ?? [];
   const tradeParticipantColors =
     currentTrade && gameState.colors.length > 0
@@ -425,23 +451,43 @@ export default function TradePanel({
         <p className="trade-placeholder">現在提案中の交渉はありません。</p>
       )}
 
-      {awaitingResponse && !isTradeOfferer && (acceptAction || rejectAction) && (
+      {awaitingResponse &&
+        !isTradeOfferer &&
+        (acceptAction ||
+          rejectAction ||
+          fallbackAcceptAction ||
+          fallbackRejectAction) && (
         <div className="trade-response">
           <p>この交渉提案に応じますか？</p>
           <div className="trade-response-buttons">
             <Button
               variant="contained"
               color="primary"
-              disabled={!acceptAction || pendingAction !== null}
-              onClick={() => acceptAction && submitAction(acceptAction)}
+              disabled={
+                !(acceptAction || fallbackAcceptAction) ||
+                pendingAction !== null
+              }
+              onClick={() => {
+                const action = acceptAction ?? fallbackAcceptAction;
+                if (action) {
+                  submitAction(action);
+                }
+              }}
             >
               受け入れる
             </Button>
             <Button
               variant="outlined"
               color="inherit"
-              disabled={!rejectAction || pendingAction !== null}
-              onClick={() => rejectAction && submitAction(rejectAction)}
+              disabled={
+                !(rejectAction || fallbackRejectAction) || pendingAction !== null
+              }
+              onClick={() => {
+                const action = rejectAction ?? fallbackRejectAction;
+                if (action) {
+                  submitAction(action);
+                }
+              }}
             >
               断る
             </Button>
