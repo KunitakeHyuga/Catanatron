@@ -10,6 +10,7 @@ type SoundEffect =
   | "dice"
   | "resource"
   | "build"
+  | "devCard"
   | "tradeSuccess"
   | "tradeFail"
   | "tradeStart"
@@ -29,6 +30,11 @@ const SOUND_LIBRARY: Record<SoundEffect, ToneStep[]> = {
   build: [
     { frequency: 160, duration: 0.12, gain: 0.22, type: "sawtooth" },
     { frequency: 210, duration: 0.18, delay: 0.08, gain: 0.18, type: "square" },
+  ],
+  devCard: [
+    { frequency: 360, duration: 0.1, gain: 0.2, type: "triangle" },
+    { frequency: 520, duration: 0.14, delay: 0.06, gain: 0.18, type: "sine" },
+    { frequency: 420, duration: 0.12, delay: 0.14, gain: 0.16, type: "triangle" },
   ],
   tradeSuccess: [
     { frequency: 500, duration: 0.12, gain: 0.2, type: "sine" },

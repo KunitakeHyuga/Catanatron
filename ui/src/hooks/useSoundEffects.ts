@@ -4,6 +4,13 @@ import { getHumanColor, playerKey } from "../utils/stateUtils";
 import { playSound } from "../utils/audioManager";
 
 const BUILD_ACTIONS = new Set(["BUILD_SETTLEMENT", "BUILD_CITY", "BUILD_ROAD"]);
+const DEV_CARD_ACTIONS = new Set([
+  "BUY_DEVELOPMENT_CARD",
+  "PLAY_KNIGHT_CARD",
+  "PLAY_ROAD_BUILDING",
+  "PLAY_MONOPOLY",
+  "PLAY_YEAR_OF_PLENTY",
+]);
 
 function sumResources(gameState: GameState, color: Color): number {
   const key = playerKey(gameState, color);
@@ -38,6 +45,8 @@ export default function useSoundEffects(
           playSound("dice");
         } else if (actionType && BUILD_ACTIONS.has(actionType)) {
           playSound("build");
+        } else if (actionType && DEV_CARD_ACTIONS.has(actionType)) {
+          playSound("devCard");
         } else if (actionType === "CONFIRM_TRADE") {
           playSound("tradeSuccess");
         } else if (actionType === "CANCEL_TRADE") {
