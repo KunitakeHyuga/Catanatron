@@ -94,6 +94,17 @@ export default function RightDrawer( { children }: PropsWithChildren ) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const root = document.documentElement;
+    root.style.setProperty("--right-drawer-width", `${desktopWidth}px`);
+    return () => {
+      root.style.removeProperty("--right-drawer-width");
+    };
+  }, [desktopWidth]);
+
   const handleResizeStart = useCallback(
     (
       event:

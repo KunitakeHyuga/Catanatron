@@ -114,7 +114,7 @@ main {
 
 @media (min-width: variables.$lg-breakpoint) {
   .game-actions-floating {
-    right: 360px;
+    right: calc(var(--right-drawer-width, 340px) + 20px);
     left: unset;
     width: 340px;
   }
