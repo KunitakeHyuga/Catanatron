@@ -60,6 +60,21 @@
   background: variables.$black;
   position: relative;
 
+  .logo {
+    margin: 5px 20px 0 20px;
+    text-align: center;
+  }
+
+  .sound-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+    button {
+      font-size: 0.85rem;
+      padding: 2px 16px;
+    }
+  }
+
   .board-container,
   .loader {
     height: 100%;

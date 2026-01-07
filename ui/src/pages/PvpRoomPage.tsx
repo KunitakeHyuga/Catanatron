@@ -25,6 +25,8 @@ import ACTIONS from "../actions";
 import { dispatchSnackbar } from "../components/Snackbar";
 import useRollDisplay from "../hooks/useRollDisplay";
 import { colorLabel } from "../utils/i18n";
+import useSoundEffects from "../hooks/useSoundEffects";
+import { resumeAudioContext } from "../utils/audioManager";
 import {
   getPvpRoomStatus,
   joinPvpRoom,
@@ -83,6 +85,7 @@ export default function PvpRoomPage() {
   const [joinDialogOpen, setJoinDialogOpen] = useState(!token);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -96,6 +99,17 @@ export default function PvpRoomPage() {
   const highlightedRollNumber = rollForHighlight
     ? rollForHighlight[0] + rollForHighlight[1]
     : null;
+  useSoundEffects(state.gameState, soundEnabled);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      if (next) {
+        resumeAudioContext();
+      }
+      return next;
+    });
+  }, []);
 
   const saveSession = useCallback(
     (info: { token: string; user_name: string; seat_color: Color }) => {
@@ -429,6 +443,17 @@ export default function PvpRoomPage() {
 
       {showLiveGame ? (
         <div className="pvp-live-game">
+          <h1 className="logo">Catanatron</h1>
+          <div className="sound-toggle">
+            <Button
+              variant={soundEnabled ? "contained" : "outlined"}
+              color="secondary"
+              onClick={toggleSound}
+              size="small"
+            >
+              {soundEnabled ? "サウンドON" : "サウンドOFF"}
+            </Button>
+          </div>
           <TurnIndicator
             gameState={state.gameState}
             playerColorOverride={seatColor}
