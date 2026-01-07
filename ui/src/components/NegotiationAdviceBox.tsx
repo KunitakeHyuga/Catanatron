@@ -27,7 +27,7 @@ const RESOURCE_REPLACEMENTS: Array<[RegExp, string]> = [
   [/RED/g, "赤"],
   [/BLUE/g, "青"],
   [/WHITE/g, "白"],
-  [/ORANGE/g, "オレンジ"],
+  [/ORANGE/g, "橙"],
 ];
 
 const DEV_CARD_REPLACEMENTS: Array<[RegExp, string]> = [

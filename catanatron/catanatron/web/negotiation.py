@@ -143,6 +143,35 @@ def _summarize_actions(
     return formatted, starting_index
 
 
+def _map_player_color(color: str) -> str:
+    color_map = {
+        "RED": "赤",
+        "BLUE": "青",
+        "WHITE": "白",
+        "ORANGE": "オレンジ",
+    }
+    return color_map.get(color, color)
+
+
+def _build_strategy_section(player_colors: List[str]) -> List[str]:
+    if not player_colors:
+        return []
+    lines: List[str] = ["各プレイヤーの戦略分析："]
+    for color in player_colors:
+        label = _map_player_color(color)
+        lines.extend(
+            [
+                f" {label}",
+                "  戦略分類：開拓地特化型か都市特化型かカード特化型",
+                "  数ターン先の行動予想：",
+                "  防ぎ方：",
+                "  交渉での着眼点：",
+            ]
+        )
+    lines.append("")
+    return lines
+
+
 def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
     payload = json.loads(json.dumps(game, cls=GameEncoder))
     player_summaries = _summarize_player_state(payload)
@@ -166,6 +195,7 @@ def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
         "human_colors": human_colors,
         "playable_actions": playable_actions,
         "longest_roads_by_player": payload.get("longest_roads_by_player"),
+        "player_colors": payload.get("colors", []),
     }
 
     prompt = "\n".join(
@@ -206,23 +236,25 @@ def generate_negotiation_advice(
             temperature = None
     else:
         temperature = None
+    player_colors = context.get("player_colors") or []
+    strategy_section = _build_strategy_section(player_colors)
     instructions = "\n".join(
         [
             "あなたはカタンの交渉支援AIエージェントです。初心者プレイヤーの交渉の手助けをしてください。以下のテンプレートを厳守し、日本語で回答してください。",
+            "テンプレート以外の文章は追加しないこと。",
             "プレイヤー色は必ず「赤」「青」「白」「オレンジ」の表記を使い、資源名は「木材」「レンガ」「羊毛」「小麦」「鉱石」で統一してください。",
             "枚数は「2枚」ではなく「×2」表記を使ってください。",
             "括弧（）や()は一切使わないでください。",
-            "テンプレート以外の文章は追加しないこと。",
+            "戦略分類は次を参考にする。",
+            "開拓地特化型は街道(木材やレンガ)と開拓地(羊毛や小麦)を広げて安定資源を狙う。",
+            "都市特化型は開拓地を都市化(小麦や鉱石)して資源量を伸ばし交渉で不足資源を補う。",
+            "カード特化型は発展カード重視(羊毛，小麦，鉱石)で高リスク高リターンな戦略である。",
+            "交渉は勝利点が最多の相手をできるだけ避ける。",
+            "交渉相手は参加しているプレイヤーの色のみ挙げること。",
             "今は(交渉する/交渉しない)。",
             "理由：(1行で簡潔に)。",
             "",
-            "今見るもの（最大5）",
-            " 自分の不足資源：",
-            " 相手AのVPと最長路/最大騎士：",
-            " ロバー位置と直近の出目：",
-            " 港の有無：",
-            " 相手の手札枚数：",
-            "",
+            *strategy_section,
             "おすすめの交渉",
             "----------------------------",
             "① 相手：(Px)",
@@ -233,7 +265,7 @@ def generate_negotiation_advice(
             "    注意：(1行)",
             "    成功率見込み：(xx%)",
             "",
-            "   許容範囲",
+            "   譲る許容範囲",
             "    上限：(出してよい最大)",
             "    NG：(絶対出さないもの)",
             "----------------------------",
@@ -245,7 +277,7 @@ def generate_negotiation_advice(
             "    注意：(1行)",
             "    成功率見込み：(xx%)",
             "",
-            "   許容範囲",
+            "   譲る許容範囲",
             "    上限：(出してよい最大)",
             "    NG：(絶対出さないもの)",
             "----------------------------",
@@ -264,10 +296,12 @@ def generate_negotiation_advice(
         len(playable_actions),
     )
     if board_image_data_url:
-        prompt_with_instructions += (
-            "\n\n盤面JPEGも参照できます。テンプレ内で必要な箇所に画像の情報を1行程度で織り込み、画像を確認したと分かる短い一言を添えてください。"
+        image_suffix = (
+            "盤面JPEGも参照できます。テンプレ内で必要な箇所に画像の情報を1行程度で織り込み、"
+            "画像を確認したと分かる短い一言を添えてください。"
             " 画像専用の詳細セクションを追加する必要はありません。"
         )
+        prompt_with_instructions = f"{prompt_with_instructions}\n\n{image_suffix}"
     if board_image_data_url:
         user_content: Any = [
             {"type": "text", "text": prompt_with_instructions},
