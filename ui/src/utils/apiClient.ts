@@ -252,13 +252,17 @@ export async function getMctsAnalysis(
 export async function requestNegotiationAdvice(
   gameId: string,
   stateIndex: StateIndex = "latest",
-  boardImageDataUrl?: string | null
+  boardImageDataUrl?: string | null,
+  requesterColor?: Color | null
 ): Promise<NegotiationAdviceResult> {
   try {
-    const payload =
+    const payload: Record<string, string> =
       boardImageDataUrl && boardImageDataUrl.length > 0
         ? { board_image: boardImageDataUrl }
         : {};
+    if (requesterColor) {
+      payload.requester_color = requesterColor;
+    }
     const response = await axios.post<NegotiationAdviceResult>(
       `${API_URL}/api/games/${gameId}/states/${stateIndex}/negotiation-advice`,
       payload

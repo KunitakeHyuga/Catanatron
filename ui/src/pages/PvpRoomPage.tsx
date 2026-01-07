@@ -510,6 +510,7 @@ export default function PvpRoomPage() {
                   stateIndex={"latest"}
                   gameIdOverride={roomStatus.game_id}
                   gameStateOverride={state.gameState ?? null}
+                  requesterColorOverride={seatColor}
                 />
                 <Divider />
               </>

@@ -9,7 +9,8 @@ import {
   type StateIndex,
 } from "../utils/apiClient";
 import { store } from "../store";
-import type { GameState } from "../utils/api.types";
+import type { Color, GameState } from "../utils/api.types";
+import { getHumanColor } from "../utils/stateUtils";
 import CollapsibleSection from "./CollapsibleSection";
 import BoardSnapshot from "./BoardSnapshot";
 import { RightDrawerSizingContext } from "./RightDrawer";
@@ -195,12 +196,14 @@ type NegotiationAdviceBoxProps = {
   stateIndex: StateIndex;
   gameIdOverride?: string | null;
   gameStateOverride?: GameState | null;
+  requesterColorOverride?: Color | null;
 };
 
 export default function NegotiationAdviceBox({
   stateIndex,
   gameIdOverride = null,
   gameStateOverride = null,
+  requesterColorOverride = null,
 }: NegotiationAdviceBoxProps) {
   const { gameId: routeGameId } = useParams();
   const { state } = useContext(store);
@@ -210,6 +213,9 @@ export default function NegotiationAdviceBox({
   const [error, setError] = useState("");
   const gameId = gameIdOverride ?? routeGameId ?? undefined;
   const currentGameState = gameStateOverride ?? state.gameState;
+  const requesterColor =
+    requesterColorOverride ??
+    (currentGameState ? getHumanColor(currentGameState) : null);
   const boardSnapshotRef = useRef<HTMLDivElement | null>(null);
   const adviceOutputRef = useRef<HTMLDivElement | null>(null);
 
@@ -265,7 +271,8 @@ export default function NegotiationAdviceBox({
       const result = await requestNegotiationAdvice(
         gameId,
         stateIndex,
-        boardImageDataUrl
+        boardImageDataUrl,
+        requesterColor
       );
       if (boardImageDataUrl) {
         console.info("Negotiation advice request sent with board image.");
