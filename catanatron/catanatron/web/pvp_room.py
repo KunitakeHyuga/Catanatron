@@ -10,6 +10,7 @@ from flask import abort
 
 from catanatron.game import Game
 from catanatron.models.player import Color, Player
+from catanatron.models.enums import ActionPrompt, ActionType
 from catanatron.state_functions import get_state_index
 from catanatron.web.models import (
     PvpRoomState,
@@ -288,9 +289,16 @@ def submit_action(
         abort(403, description="観戦者は操作できません。")
 
     game = get_game_state(room.game_id)
+    parsed_action = action_from_json(action_payload)
+    if parsed_action.color.value != session.seat_color:
+        abort(403, description="この色では操作できません。")
     current_color = game.state.current_color().value
-    if current_color != session.seat_color:
-        abort(403, description="現在の手番ではありません。")
+    if (
+        parsed_action.action_type not in (ActionType.ACCEPT_TRADE, ActionType.REJECT_TRADE)
+        or game.state.current_prompt != ActionPrompt.DECIDE_TRADE
+    ):
+        if current_color != session.seat_color:
+            abort(403, description="現在の手番ではありません。")
 
     current_state_index = get_state_index(game.state)
     if expected_state_index is not None:
@@ -302,7 +310,6 @@ def submit_action(
     if expected_state_index is not None and expected_state_index != current_state_index:
         abort(409, description="状態が最新ではありません。")
 
-    parsed_action = action_from_json(action_payload)
     try:
         game.execute(parsed_action)
     except ValueError as exc:

@@ -432,16 +432,12 @@ def apply_offer_trade(state: State, action: Action):
     state.current_trade = (*action.value, state.current_turn_index)
     state.trade_responses = tuple(False for _ in state.colors)
 
-    # start from the offerer, then advance to the first responder in seating order
-    state.current_player_index = state.current_turn_index
-    next_responder = _advance_trade_responder(state)
-    if next_responder is None:
-        # no other players to ask; immediately reset trade state
+    # keep control on the offerer; other players can respond in parallel
+    if len(state.colors) <= 1:
         reset_trading_state(state)
         state.current_prompt = ActionPrompt.PLAY_TURN
         return ActionRecord(action=action, result=None)
-
-    state.current_player_index = next_responder
+    state.current_player_index = state.current_turn_index
     state.current_prompt = ActionPrompt.DECIDE_TRADE
     return ActionRecord(action=action, result=None)
 
@@ -454,9 +450,12 @@ def apply_accept_trade(state: State, action: Action):
     state.acceptees = tuple(new_acceptess)
     _set_trade_response(state, index)
 
-    # immediately give control back to offering player to choose acceptee
-    state.current_player_index = state.current_turn_index
-    state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
+    if _all_trade_responses_received(state):
+        state.current_player_index = state.current_turn_index
+        state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
+    else:
+        state.current_player_index = state.current_turn_index
+        state.current_prompt = ActionPrompt.DECIDE_TRADE
 
     return ActionRecord(action=action, result=None)
 
@@ -464,13 +463,11 @@ def apply_accept_trade(state: State, action: Action):
 def apply_reject_trade(state: State, action: Action):
     responder_index = state.colors.index(action.color)
     _set_trade_response(state, responder_index)
-    next_responder = _advance_trade_responder(state)
-    if next_responder is None:
-        # No more responses pending; give control back to offerer regardless
+    if _all_trade_responses_received(state):
         state.current_player_index = state.current_turn_index
         state.current_prompt = ActionPrompt.DECIDE_ACCEPTEES
     else:
-        state.current_player_index = next_responder
+        state.current_player_index = state.current_turn_index
         state.current_prompt = ActionPrompt.DECIDE_TRADE
 
     return ActionRecord(action=action, result=None)
@@ -620,3 +617,21 @@ def _set_trade_response(state: State, index: int):
         responses.extend([False] * (len(state.colors) - len(responses)))
     responses[index] = True
     state.trade_responses = tuple(responses)
+
+
+def _all_trade_responses_received(state: State) -> bool:
+    num_players = len(state.colors)
+    if num_players <= 1:
+        return True
+    offerer_index = _get_trade_offerer_index(state)
+    responses = list(
+        getattr(state, "trade_responses", tuple(False for _ in state.colors))
+    )
+    if len(responses) < num_players:
+        responses.extend([False] * (num_players - len(responses)))
+    for idx in range(num_players):
+        if idx == offerer_index:
+            continue
+        if not responses[idx]:
+            return False
+    return True

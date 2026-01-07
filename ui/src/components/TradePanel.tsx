@@ -126,7 +126,15 @@ export default function TradePanel({
     gameState && playerColorOverride
       ? playerColorOverride
       : gameState
-      ? getHumanColor(gameState)
+      ? (() => {
+          const humanColors = gameState.colors.filter(
+            (color) => !gameState.bot_colors.includes(color)
+          );
+          if (humanColors.length === 1) {
+            return humanColors[0];
+          }
+          return gameState.current_color;
+        })()
       : null;
 
   const availableCounts = useMemo<ResourceCounts>(() => {
@@ -272,20 +280,19 @@ export default function TradePanel({
   };
 
   const awaitingResponse =
-    gameState.current_prompt === "DECIDE_TRADE" &&
-    gameState.current_color === humanColor;
+    gameState.current_prompt === "DECIDE_TRADE" && Boolean(humanColor);
   const decidingPartner =
     gameState.current_prompt === "DECIDE_ACCEPTEES" &&
     gameState.current_color === humanColor;
 
   const acceptAction = awaitingResponse
     ? (gameState.current_playable_actions.find(
-        (action) => action[1] === "ACCEPT_TRADE"
+        (action) => action[1] === "ACCEPT_TRADE" && action[0] === humanColor
       ) as AcceptTradeAction | undefined)
     : undefined;
   const rejectAction = awaitingResponse
     ? (gameState.current_playable_actions.find(
-        (action) => action[1] === "REJECT_TRADE"
+        (action) => action[1] === "REJECT_TRADE" && action[0] === humanColor
       ) as RejectTradeAction | undefined)
     : undefined;
   const confirmActions = decidingPartner
@@ -312,14 +319,6 @@ export default function TradePanel({
     currentTrade.request.every(
       (count, index) => count <= (availableCounts[index] ?? 0)
     );
-  const fallbackAcceptAction =
-    awaitingResponse && humanColor && tradeVector && canAffordRequest
-      ? ([humanColor, "ACCEPT_TRADE", tradeVector] as AcceptTradeAction)
-      : undefined;
-  const fallbackRejectAction =
-    awaitingResponse && humanColor && tradeVector
-      ? ([humanColor, "REJECT_TRADE", tradeVector] as RejectTradeAction)
-      : undefined;
   const rawAcceptees = currentTrade?.acceptees ?? [];
   const tradeParticipantColors =
     currentTrade && gameState.colors.length > 0
@@ -355,6 +354,21 @@ export default function TradePanel({
     currentTrade && humanColor
       ? currentTrade.offerer_color === humanColor
       : false;
+  const responderStatus = tradeForDisplay?.acceptees.find(
+    (entry) => entry.color === humanColor
+  );
+  const canRespondNow =
+    awaitingResponse && !isTradeOfferer
+      ? !responderStatus || !responderStatus.responded
+      : false;
+  const fallbackAcceptAction =
+    canRespondNow && humanColor && tradeVector && canAffordRequest
+      ? ([humanColor, "ACCEPT_TRADE", tradeVector] as AcceptTradeAction)
+      : undefined;
+  const fallbackRejectAction =
+    canRespondNow && humanColor && tradeVector
+      ? ([humanColor, "REJECT_TRADE", tradeVector] as RejectTradeAction)
+      : undefined;
   const canProposeTrade =
     isPlayersTurn &&
     hasRolled &&
@@ -451,8 +465,7 @@ export default function TradePanel({
         <p className="trade-placeholder">現在提案中の交渉はありません。</p>
       )}
 
-      {awaitingResponse &&
-        !isTradeOfferer &&
+      {canRespondNow &&
         (acceptAction ||
           rejectAction ||
           fallbackAcceptAction ||

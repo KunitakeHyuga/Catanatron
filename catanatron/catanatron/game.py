@@ -11,7 +11,8 @@ from catanatron.models.actions import generate_playable_actions
 from catanatron.models.enums import Action, ActionPrompt, ActionRecord, ActionType
 from catanatron.state import State
 from catanatron.apply_action import apply_action
-from catanatron.state_functions import player_key, player_has_rolled
+from catanatron.state_functions import player_key, player_has_rolled, get_player_freqdeck
+from catanatron.models.decks import freqdeck_contains
 from catanatron.models.map import CatanMap
 from catanatron.models.player import Color, Player
 
@@ -34,6 +35,41 @@ def is_valid_action(playable_actions, state: State, action: Action) -> bool:
             state.is_resolving_trade
             and state.colors[state.current_turn_index] == action.color
         )
+    elif action.action_type in (ActionType.ACCEPT_TRADE, ActionType.REJECT_TRADE):
+        if (
+            not state.is_resolving_trade
+            or state.current_prompt != ActionPrompt.DECIDE_TRADE
+        ):
+            return False
+        if action.value is None:
+            return False
+        trade_vector = getattr(state, "current_trade", ())
+        if tuple(action.value) != tuple(trade_vector):
+            return False
+        if len(state.colors) == 0:
+            return False
+        offerer_index = (
+            trade_vector[10]
+            if len(trade_vector) >= 11 and isinstance(trade_vector[10], int)
+            else state.current_turn_index
+        )
+        offerer_color = state.colors[offerer_index % len(state.colors)]
+        if action.color == offerer_color:
+            return False
+        responses = list(
+            getattr(state, "trade_responses", tuple(False for _ in state.colors))
+        )
+        if len(responses) < len(state.colors):
+            responses.extend([False] * (len(state.colors) - len(responses)))
+        responder_index = state.colors.index(action.color)
+        if responses[responder_index]:
+            return False
+        if action.action_type == ActionType.ACCEPT_TRADE:
+            freqdeck = get_player_freqdeck(state, action.color)
+            asked = trade_vector[5:10]
+            if not freqdeck_contains(freqdeck, asked):
+                return False
+        return True
 
     return action in playable_actions
 
