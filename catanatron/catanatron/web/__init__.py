@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Flask
@@ -8,6 +9,14 @@ def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
     app = Flask(__name__)
     CORS(app)
+    log_level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
+    log_level = logging.getLevelName(log_level_name)
+    if not isinstance(log_level, int):
+        log_level = logging.INFO
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    for handler in root_logger.handlers:
+        handler.setLevel(log_level)
 
     # ===== Load base configuration
     database_url = os.environ.get("DATABASE_URL", "sqlite:///:memory:")

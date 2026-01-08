@@ -163,16 +163,16 @@ def _build_strategy_section(player_colors: List[str]) -> List[str]:
             [
                 f" {label}",
                 "  戦略分類：開拓地特化型か都市特化型かカード特化型",
-                "  数ターン先の行動予想：",
-                "  防ぎ方：",
-                "  交渉での着眼点：",
+                "  分析：",
             ]
         )
     lines.append("")
     return lines
 
 
-def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
+def _build_prompt(
+    game: Game, requester_color: str | None = None
+) -> Tuple[str, Dict[str, Any]]:
     payload = json.loads(json.dumps(game, cls=GameEncoder))
     player_summaries = _summarize_player_state(payload)
     board_snapshot = _summarize_board(payload)
@@ -186,12 +186,13 @@ def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
     human_colors = sorted(
         list(set(payload.get("colors", [])) - set(payload.get("bot_colors", [])))
     )
+    effective_current_color = requester_color or payload.get("current_color")
     context = {
         "player_summaries": player_summaries,
         "board_snapshot": board_snapshot,
         "recent_action_log": formatted_actions,
         "action_offset": action_offset,
-        "current_color": payload.get("current_color"),
+        "current_color": effective_current_color,
         "human_colors": human_colors,
         "playable_actions": playable_actions,
         "longest_roads_by_player": payload.get("longest_roads_by_player"),
@@ -201,16 +202,16 @@ def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
     prompt = "\n".join(
         [
             "## ゲーム状況",
-            f"現在の手番: {payload.get('current_color')}",
+            f"現在の手番: {effective_current_color}",
             f"人間プレイヤー: {', '.join(human_colors) if human_colors else '（全員ボット）'}",
             "### プレイヤー情報",
             _to_pretty_json(player_summaries),
             "### 盤面サマリ",
-            _to_pretty_json(board_snapshot),
+            # _to_pretty_json(board_snapshot),
             "### 最近の行動ログ",
             _to_pretty_json(formatted_actions),
             "### 現在可能なアクション",
-            _to_pretty_json(playable_actions),
+            # _to_pretty_json(playable_actions),
         ]
     )
 
@@ -218,10 +219,12 @@ def _build_prompt(game: Game) -> Tuple[str, Dict[str, Any]]:
 
 
 def generate_negotiation_advice(
-    game: Game, board_image_data_url: str | None = None
+    game: Game,
+    board_image_data_url: str | None = None,
+    requester_color: str | None = None,
 ) -> Tuple[str, Dict[str, Any]]:
     client = _get_openai_client()
-    prompt, context = _build_prompt(game)
+    prompt, context = _build_prompt(game, requester_color)
     fallback_model = os.environ.get("NEGOTIATION_ADVICE_FALLBACK_MODEL", "gpt-4o-mini")
     preferred_model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
         "OPENAI_MODEL"
@@ -240,7 +243,7 @@ def generate_negotiation_advice(
     strategy_section = _build_strategy_section(player_colors)
     instructions = "\n".join(
         [
-            "あなたはカタンの交渉支援AIエージェントです。初心者プレイヤーの交渉の手助けをしてください。以下のテンプレートを厳守し、日本語で回答してください。",
+            "あなたはカタンの交渉支援AIエージェントです。プレイヤー情報および盤面情報を参照して初心者プレイヤーの交渉の手助けをしてください。以下のテンプレートを厳守し、日本語で回答してください。",
             "テンプレート以外の文章は追加しないこと。",
             "プレイヤー色は必ず「赤」「青」「白」「オレンジ」の表記を使い、資源名は「木材」「レンガ」「羊毛」「小麦」「鉱石」で統一してください。",
             "枚数は「2枚」ではなく「×2」表記を使ってください。",
@@ -252,16 +255,18 @@ def generate_negotiation_advice(
             "交渉は勝利点が最多の相手をできるだけ避ける。",
             "交渉相手は参加しているプレイヤーの色のみ挙げること。",
             "今は(交渉する/交渉しない)。",
-            "理由：(1行で簡潔に)。",
+            "理由：(2行で簡潔に)。",
             "",
+            " 分析は，相手の戦略を考慮して，どんな資源を求めそうか，どんな行動を取りそうかを含めること。",
+            " どの方向に建設するか，港を取るか，特殊ポイントを取るべきかも入れて",
             *strategy_section,
             "おすすめの交渉",
             "----------------------------",
             "① 相手：(Px)",
-            "    受：(資源)",
             "    譲：(資源)",
-            "    自分の得：(1行)",
             "    相手の得：(1行)",
+            "    受：(資源)",
+            "    自分の得：(1行)",
             "    注意：(1行)",
             "    成功率見込み：(xx%)",
             "",
@@ -270,10 +275,10 @@ def generate_negotiation_advice(
             "    NG：(絶対出さないもの)",
             "----------------------------",
             "② 相手：(Py)",
-            "    受：(資源)",
             "    譲：(資源)",
-            "    自分の得：(1行)",
             "    相手の得：(1行)",
+            "    受：(資源)",
+            "    自分の得：(1行)",
             "    注意：(1行)",
             "    成功率見込み：(xx%)",
             "",
@@ -297,9 +302,7 @@ def generate_negotiation_advice(
     )
     if board_image_data_url:
         image_suffix = (
-            "盤面JPEGも参照できます。テンプレ内で必要な箇所に画像の情報を1行程度で織り込み、"
-            "画像を確認したと分かる短い一言を添えてください。"
-            " 画像専用の詳細セクションを追加する必要はありません。"
+            "プレイヤー情報および盤面情報を参照して初心者プレイヤーの交渉の手助けをしてください。"
         )
         prompt_with_instructions = f"{prompt_with_instructions}\n\n{image_suffix}"
     if board_image_data_url:
@@ -336,6 +339,7 @@ def generate_negotiation_advice(
             request_kwargs.get("temperature", "default"),
             bool(board_image_data_url),
         )
+        logging.info("Negotiation advice prompt:\n%s", prompt_with_instructions)
         def _execute_request() -> Any:
             return client.chat.completions.create(**request_kwargs)
 
@@ -385,12 +389,169 @@ def generate_negotiation_advice(
     return advice.strip(), context
 
 
+def generate_negotiation_followup(
+    game: Game,
+    question: str,
+    advice: str | None = None,
+    history: List[Dict[str, str]] | None = None,
+    board_image_data_url: str | None = None,
+    requester_color: str | None = None,
+) -> Tuple[str, Dict[str, Any]]:
+    client = _get_openai_client()
+    prompt, context = _build_prompt(game, requester_color)
+    fallback_model = os.environ.get("NEGOTIATION_ADVICE_FALLBACK_MODEL", "gpt-4o-mini")
+    preferred_model = os.environ.get("NEGOTIATION_ADVICE_MODEL") or os.environ.get(
+        "OPENAI_MODEL"
+    )
+    model = preferred_model or fallback_model
+    temperature_value = os.environ.get("NEGOTIATION_ADVICE_TEMPERATURE", "").strip()
+    temperature: float | None
+    if temperature_value:
+        try:
+            temperature = float(temperature_value)
+        except ValueError:
+            temperature = None
+    else:
+        temperature = None
+    history_lines: List[str] = []
+    for entry in history or []:
+        q = (entry.get("question") or "").strip()
+        a = (entry.get("answer") or "").strip()
+        if not q and not a:
+            continue
+        if q:
+            history_lines.append(f"Q: {q}")
+        if a:
+            history_lines.append(f"A: {a}")
+    instructions = "\n".join(
+        [
+            "あなたはカタンの交渉支援AIエージェントです。日本語で簡潔に回答してください。",
+            "プレイヤー色は必ず「赤」「青」「白」「橙」の表記を使い、資源名は「木材」「レンガ」「羊毛」「小麦」「鉱石」で統一してください。",
+            "枚数は「2枚」ではなく「×2」表記を使ってください。",
+            "括弧（）や()は一切使わないでください。",
+            "テンプレートの再掲は不要です。質問に対する回答のみを返してください。",
+        ]
+    )
+    followup_sections = [
+        prompt,
+        instructions,
+        "### 直近の交渉アドバイス",
+        advice.strip() if advice else "なし",
+    ]
+    if history_lines:
+        followup_sections.extend(["### これまでの質問と回答", "\n".join(history_lines)])
+    followup_sections.extend(["### 今回の質問", question.strip()])
+    prompt_with_instructions = "\n\n".join(followup_sections)
+    logging.info(
+        "Negotiation followup prompt ready: model=%s temp=%s board_image=%s prompt_chars=%d",
+        model,
+        temperature if temperature is not None else "default",
+        bool(board_image_data_url),
+        len(prompt_with_instructions),
+    )
+    if board_image_data_url:
+        image_suffix = (
+            "プレイヤー情報および盤面情報を参照して回答してください。"
+            "画像を確認したと分かる短い一言を添えてください。"
+        )
+        prompt_with_instructions = f"{prompt_with_instructions}\n\n{image_suffix}"
+    if board_image_data_url:
+        user_content: Any = [
+            {"type": "text", "text": prompt_with_instructions},
+            {
+                "type": "image_url",
+                "image_url": {"url": board_image_data_url, "detail": "low"},
+            },
+        ]
+    else:
+        user_content = prompt_with_instructions
+    request_kwargs: Dict[str, Any] = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an expert Settlers of Catan negotiation coach. "
+                "Provide concise trade/negotiation ideas in Japanese.",
+            },
+            {
+                "role": "user",
+                "content": user_content,
+            },
+        ],
+    }
+    if temperature is not None:
+        request_kwargs["temperature"] = temperature
+    logging.info(
+        "Negotiation followup request -> model=%s temp=%s board_image=%s",
+        request_kwargs.get("model"),
+        request_kwargs.get("temperature", "default"),
+        bool(board_image_data_url),
+    )
+    logging.info("Negotiation followup prompt:\n%s", prompt_with_instructions)
+
+    def _execute_request() -> Any:
+        return client.chat.completions.create(**request_kwargs)
+
+    try:
+        response = _execute_request()
+    except OpenAIError as exc:
+        error_code = getattr(exc, "code", None)
+        if temperature is not None and error_code == "unsupported_value":
+            logging.warning(
+                "Negotiation followup temperature unsupported (temp=%s). Retrying without it.",
+                temperature,
+            )
+            request_kwargs.pop("temperature", None)
+            response = _execute_request()
+        elif error_code == "model_not_found" and request_kwargs.get("model") != fallback_model:
+            logging.warning(
+                "Negotiation followup model '%s' not found. Falling back to '%s'.",
+                request_kwargs.get("model"),
+                fallback_model,
+            )
+            request_kwargs["model"] = fallback_model
+            response = _execute_request()
+        else:
+            raise
+
+    choices = getattr(response, "choices", [])
+    if not choices:
+        raise NegotiationAdviceError("OpenAI API response did not include any choices.")
+    answer = choices[0].message.content if choices[0].message else None
+    if not answer:
+        raise NegotiationAdviceError("OpenAI API response did not include text content.")
+    return answer.strip(), context
+
+
 def request_negotiation_advice(
-    game: Game, board_image_data_url: str | None = None
+    game: Game,
+    board_image_data_url: str | None = None,
+    requester_color: str | None = None,
 ) -> Dict[str, Any]:
     """
     Public helper that hides the raw OpenAI payload and only returns fields that the API
     endpoint should expose.
     """
-    advice, _ = generate_negotiation_advice(game, board_image_data_url)
+    advice, _ = generate_negotiation_advice(
+        game, board_image_data_url, requester_color
+    )
     return {"advice": advice}
+
+
+def request_negotiation_followup(
+    game: Game,
+    question: str,
+    advice: str | None = None,
+    history: List[Dict[str, str]] | None = None,
+    board_image_data_url: str | None = None,
+    requester_color: str | None = None,
+) -> Dict[str, Any]:
+    answer, _ = generate_negotiation_followup(
+        game,
+        question,
+        advice,
+        history,
+        board_image_data_url,
+        requester_color,
+    )
+    return {"answer": answer}
