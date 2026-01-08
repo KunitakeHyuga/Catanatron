@@ -33,16 +33,20 @@ const record = (
 ): GameActionRecord => [[color, type as any, value] as any, result];
 
 describe("calculateNegotiationStats", () => {
-  it("returns empty stats when no human color is present", () => {
+  it("returns stats for all colors even when only bots are present", () => {
     const gameState = {
       ...defaultState(),
       bot_colors: ["RED", "BLUE"],
       colors: ["RED", "BLUE"],
     };
     const stats = calculateNegotiationStats(gameState, []);
-    expect(stats.playerColor).toBeNull();
-    expect(stats.offerCount).toBe(0);
-    expect(stats.adviceRequestCount).toBe(0);
+    expect(stats).toHaveLength(2);
+    const redStats = stats.find((entry) => entry.playerColor === "RED");
+    const blueStats = stats.find((entry) => entry.playerColor === "BLUE");
+    expect(redStats?.offerCount).toBe(0);
+    expect(redStats?.adviceRequestCount).toBe(0);
+    expect(blueStats?.offerCount).toBe(0);
+    expect(blueStats?.adviceRequestCount).toBe(0);
   });
 
   it("counts attempts, successes, durations, and advice follow-ups", () => {
@@ -83,15 +87,15 @@ describe("calculateNegotiationStats", () => {
     ];
 
     const stats = calculateNegotiationStats(gameState, events);
-    expect(stats.playerColor).toBe("RED");
-    expect(stats.offerCount).toBe(2);
-    expect(stats.successCount).toBe(1);
-    expect(stats.successRate).toBeCloseTo(0.5);
-    expect(stats.timestampsAvailable).toBe(true);
-    expect(stats.totalDurationMs).toBe(600);
-    expect(stats.averageDurationMs).toBe(300);
-    expect(stats.adviceRequestCount).toBe(2);
-    expect(stats.adviceLedToOfferCount).toBe(1);
-    expect(stats.adviceFollowRate).toBeCloseTo(0.5);
+    const redStats = stats.find((entry) => entry.playerColor === "RED");
+    expect(redStats?.offerCount).toBe(2);
+    expect(redStats?.successCount).toBe(1);
+    expect(redStats?.successRate).toBeCloseTo(0.5);
+    expect(redStats?.timestampsAvailable).toBe(true);
+    expect(redStats?.totalDurationMs).toBe(600);
+    expect(redStats?.averageDurationMs).toBe(300);
+    expect(redStats?.adviceRequestCount).toBe(2);
+    expect(redStats?.adviceLedToOfferCount).toBe(1);
+    expect(redStats?.adviceFollowRate).toBeCloseTo(0.5);
   });
 });

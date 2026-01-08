@@ -206,6 +206,24 @@
         color: rgba(255, 255, 255, 0.7);
       }
 
+      .analytics-player-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .analytics-player {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .analytics-player-title {
+        margin: 0;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
       .analytics-grid {
         display: grid;
         gap: 12px;

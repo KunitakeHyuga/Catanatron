@@ -228,7 +228,7 @@ export default function RecordsPage() {
 
   const negotiationStats = useMemo(() => {
     if (!gameState) {
-      return null;
+      return [];
     }
     return calculateNegotiationStats(gameState, gameEvents);
   }, [gameState, gameEvents]);
@@ -504,78 +504,89 @@ export default function RecordsPage() {
                     </div>
                   </section>
                   <section className="records-analytics">
-                    <h2>
-                      交渉データ
-                      {negotiationStats?.playerColor
-                        ? `（${colorLabel(negotiationStats.playerColor)}）`
-                        : ""}
-                    </h2>
-                    {!negotiationStats?.playerColor ? (
+                    <h2>交渉データ</h2>
+                    {negotiationStats.length === 0 ? (
                       <p className="analytics-note">
-                        人間プレイヤーのデータがないため、交渉ログを集計できません。
+                        交渉ログがないため、集計できません。
                       </p>
                     ) : (
-                      <div className="analytics-grid">
-                        <div className="analytics-item">
-                          <span className="analytics-label">交渉提案回数</span>
-                          <span className="analytics-value">
-                            {negotiationStats.offerCount}回（成立{" "}
-                            {negotiationStats.successCount}回）
-                          </span>
-                        </div>
-                        <div className="analytics-item">
-                          <span className="analytics-label">交渉成立率</span>
-                          <span className="analytics-value">
-                            {formatPercent(negotiationStats.successRate)}
-                          </span>
-                        </div>
-                        <div className="analytics-item">
-                          <span className="analytics-label">
-                            交渉に使った時間
-                          </span>
-                          <span className="analytics-value">
-                            {negotiationStats.timestampsAvailable ? (
-                              negotiationStats.totalDurationMs !== null ? (
-                                <>
-                                  {formatDuration(
-                                    negotiationStats.totalDurationMs
+                      <div className="analytics-player-list">
+                        {negotiationStats.map((stats) => (
+                          <div
+                            key={stats.playerColor}
+                            className="analytics-player"
+                          >
+                            <h3 className="analytics-player-title">
+                              {colorLabel(stats.playerColor)}
+                            </h3>
+                            <div className="analytics-grid">
+                              <div className="analytics-item">
+                                <span className="analytics-label">
+                                  交渉提案回数
+                                </span>
+                                <span className="analytics-value">
+                                  {stats.offerCount}回（成立{" "}
+                                  {stats.successCount}回）
+                                </span>
+                              </div>
+                              <div className="analytics-item">
+                                <span className="analytics-label">
+                                  交渉成立率
+                                </span>
+                                <span className="analytics-value">
+                                  {formatPercent(stats.successRate)}
+                                </span>
+                              </div>
+                              <div className="analytics-item">
+                                <span className="analytics-label">
+                                  交渉に使った時間
+                                </span>
+                                <span className="analytics-value">
+                                  {stats.timestampsAvailable ? (
+                                    stats.totalDurationMs !== null ? (
+                                      <>
+                                        {formatDuration(
+                                          stats.totalDurationMs
+                                        )}
+                                        {stats.averageDurationMs !==
+                                          null && (
+                                          <span className="analytics-subtext">
+                                            （平均{" "}
+                                            {formatDuration(
+                                              stats.averageDurationMs
+                                            )}
+                                            ）
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      "記録なし"
+                                    )
+                                  ) : (
+                                    "未計測"
                                   )}
-                                  {negotiationStats.averageDurationMs !==
-                                    null && (
+                                </span>
+                              </div>
+                              <div className="analytics-item">
+                                <span className="analytics-label">
+                                  AIアドバイス利用
+                                </span>
+                                <span className="analytics-value">
+                                  {stats.adviceRequestCount}回
+                                  {stats.adviceRequestCount > 0 && (
                                     <span className="analytics-subtext">
-                                      （平均{" "}
-                                      {formatDuration(
-                                        negotiationStats.averageDurationMs
+                                      （
+                                      {formatPercent(
+                                        stats.adviceFollowRate
                                       )}
-                                      ）
+                                      が提案に直結）
                                     </span>
                                   )}
-                                </>
-                              ) : (
-                                "記録なし"
-                              )
-                            ) : (
-                              "未計測"
-                            )}
-                          </span>
-                        </div>
-                        <div className="analytics-item">
-                          <span className="analytics-label">
-                            AIアドバイス利用
-                          </span>
-                          <span className="analytics-value">
-                            {negotiationStats.adviceRequestCount}回
-                            {negotiationStats.adviceRequestCount > 0 && (
-                              <span className="analytics-subtext">
-                                （
-                                {formatPercent(
-                                  negotiationStats.adviceFollowRate
-                                )}
-                                が提案に直結）
-                              </span>
-                            )}
-                          </span>
-                        </div>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </section>

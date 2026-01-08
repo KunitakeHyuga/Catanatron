@@ -12,7 +12,7 @@ type TradeAttempt = {
 };
 
 export type NegotiationStats = {
-  playerColor: Color | null;
+  playerColor: Color;
   offerCount: number;
   successCount: number;
   successRate: number | null;
@@ -35,14 +35,6 @@ function extractAction(actionRecord: GameActionRecord) {
   return actionRecord[0];
 }
 
-function determinePlayerColor(gameState: GameState): Color | null {
-  const botColors = gameState.bot_colors ?? [];
-  const humanColors = gameState.colors.filter(
-    (color) => !botColors.includes(color)
-  );
-  return humanColors.length > 0 ? humanColors[0] : null;
-}
-
 function clampStateIndex(index: number, total: number): number {
   if (Number.isNaN(index) || index < 0) {
     return 0;
@@ -50,26 +42,12 @@ function clampStateIndex(index: number, total: number): number {
   return Math.min(index, total);
 }
 
-export function calculateNegotiationStats(
+function calculateStatsForPlayer(
   gameState: GameState,
-  events: GameEvent[] = []
+  events: GameEvent[],
+  playerColor: Color,
+  fallbackAdviceColor: Color | null
 ): NegotiationStats {
-  const playerColor = determinePlayerColor(gameState);
-  if (!playerColor) {
-    return {
-      playerColor: null,
-      offerCount: 0,
-      successCount: 0,
-      successRate: null,
-      totalDurationMs: null,
-      averageDurationMs: null,
-      adviceRequestCount: 0,
-      adviceLedToOfferCount: 0,
-      adviceFollowRate: null,
-      timestampsAvailable: false,
-    };
-  }
-
   const timestamps = gameState.action_timestamps ?? [];
   const timestampsAvailable =
     Array.isArray(timestamps) &&
@@ -161,7 +139,7 @@ export function calculateNegotiationStats(
     if (typeof requestedColor === "string") {
       return requestedColor === playerColor;
     }
-    return true;
+    return fallbackAdviceColor === playerColor;
   });
 
   const adviceFollowUps = filteredAdvice.filter((event) => {
@@ -210,4 +188,21 @@ export function calculateNegotiationStats(
     adviceFollowRate,
     timestampsAvailable,
   };
+}
+
+export function calculateNegotiationStats(
+  gameState: GameState,
+  events: GameEvent[] = []
+): NegotiationStats[] {
+  const colors = gameState.colors ?? [];
+  if (colors.length === 0) {
+    return [];
+  }
+  const botColors = gameState.bot_colors ?? [];
+  const humanColors = colors.filter((color) => !botColors.includes(color));
+  const fallbackAdviceColor =
+    humanColors.length === 1 ? humanColors[0] : null;
+  return colors.map((color) =>
+    calculateStatsForPlayer(gameState, events, color, fallbackAdviceColor)
+  );
 }
